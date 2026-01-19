@@ -79,10 +79,6 @@ Launch the game and press **F2** to open the menu.
 - [KogamaTools](https://github.com/Beckowl/KogamaTools) - Base code
 - [Dear ImGui](https://github.com/ocornut/imgui) - UI Framework
 
-## License
-
-MIT
-
 ## Discord
 
 [Discord Server](https://discord.gg/u6tKuP3k4M)
