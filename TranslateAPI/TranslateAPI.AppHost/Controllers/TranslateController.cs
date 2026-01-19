@@ -1,11 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Google.Cloud.Translation.V2;
-using static Google.Apis.Translate.v2.TranslationsResource;
+using System.Text.Json;
 
 namespace TranslateAPI.AppHost.Controllers
 {
@@ -21,11 +16,44 @@ namespace TranslateAPI.AppHost.Controllers
 
         [HttpPost("translate")]
         public async Task<IActionResult> Translate([FromBody] TranslateRequest req)
-        {
-            var apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
-            var client = TranslationClient.CreateFromApiKey(apiKey);
-            var result = await client.TranslateTextAsync(req.text, req.targetLanguage);
-            return Ok(new { translatedText = result.TranslatedText });
+        {   
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+
+            if (string.IsNullOrEmpty(apiKey))
+                return BadRequest("OPENAI_API_KEY not configured");
+
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+                var prompt = $"Translate this text to {req.targetLanguage}: {req.text}";
+
+                var requestBody = new
+                {
+                    model = "gpt-4o-mini",
+                    messages = new[] {
+                        new { role = "user", content = prompt }
+                    },
+                    temperature = 0.3
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, responseBody);
+
+                var result = JsonSerializer.Deserialize<JsonElement>(responseBody);
+                var translatedText = result.GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString();
+
+                return Ok(new { translatedText = translatedText });
+            }
         }
     }
 }

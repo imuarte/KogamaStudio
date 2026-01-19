@@ -12,7 +12,7 @@ namespace KogamaStudio.AntiBan
 
     internal class ThemesPatch
     {
-        [HarmonyPatch(typeof(ThemeSkybox), "Activate")]
+        [HarmonyPatch(typeof(Theme), "Activate")]
         [HarmonyPrefix]
         private static bool ThemeActivatePrefix()
         {
