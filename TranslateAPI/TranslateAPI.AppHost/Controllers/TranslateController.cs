@@ -10,7 +10,7 @@ namespace TranslateAPI.AppHost.Controllers
     {
         public class TranslateRequest
         {
-            public string text { get; set; }
+            public string[] texts { get; set; }
             public string targetLanguage { get; set; } = "en";
         }
 
@@ -26,13 +26,14 @@ namespace TranslateAPI.AppHost.Controllers
             {
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
-                var prompt = $"Translate to {req.targetLanguage}:\n{req.text}";
+                var textsJson = JsonSerializer.Serialize(req.texts);
+                var prompt = $"Translate each text in this JSON array to {req.targetLanguage}. Return ONLY a JSON array with translated texts in the same order.\n{textsJson}";
 
                 var requestBody = new
                 {
                     model = "gpt-4o-mini",
                     messages = new[] {
-                        new { role = "system", content = "You are ONLY a translator. Translate the text and return ONLY the translation. No explanations, no analysis, just the translated text." },
+                        new { role = "system", content = "You are a translator. You receive a JSON array of texts. Return ONLY a JSON array of translated texts in the same order. No markdown, no explanations, just valid JSON." },
                         new { role = "user", content = prompt }
                     },
                     temperature = 0.0
@@ -54,7 +55,7 @@ namespace TranslateAPI.AppHost.Controllers
                     .GetProperty("content")
                     .GetString();
 
-                return Ok(new { translatedText = translatedText });
+                return Ok(new { translations = translatedText });
             }
         }
     }

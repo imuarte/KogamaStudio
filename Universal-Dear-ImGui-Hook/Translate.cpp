@@ -22,7 +22,7 @@ namespace Translate {
 		if (TranslateOwnMessagesEnabled) {
 			ImGui::Indent();
 			ImGui::PushItemWidth(100);
-			ImGui::InputText("Language", TranslateOwnMessagesLanguage, sizeof(TranslateOwnMessagesLanguage));
+			ImGui::InputText("Language##own", TranslateOwnMessagesLanguage, sizeof(TranslateOwnMessagesLanguage));
 			ImGui::PopItemWidth();
 
 			if (!typing) typing = ImGui::IsItemActive();
@@ -42,7 +42,7 @@ namespace Translate {
 		if (TranslateTextCubesEnabled) {
 			ImGui::Indent();
 			ImGui::PushItemWidth(100);
-			ImGui::InputText("Language", TranslateCubesLanguage, sizeof(TranslateCubesLanguage));
+			ImGui::InputText("Language##cubes", TranslateCubesLanguage, sizeof(TranslateCubesLanguage));
 			ImGui::PopItemWidth();
 
 			if (!typing) typing = ImGui::IsItemActive();

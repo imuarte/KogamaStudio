@@ -1,18 +1,19 @@
 ﻿using Harmony;
 using Il2Cpp;
+using Il2CppAssets.Scripts.WorldObjectTypes.MVTextMsg;
 using Il2CppBorodar.FarlandSkies.CloudyCrownPro.DotParams;
+using Il2CppSystem.Collections.Generic;
 using Il2CppSystem.Runtime.InteropServices;
 using KogamaStudio.Generating.Models;
+using KogamaStudio.Objects;
 using KogamaStudio.ResourcePacks.Materials;
 using KogamaStudio.Tools;
+using KogamaStudio.Translator;
 using MelonLoader;
+using Newtonsoft.Json;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using UnityEngine;
-using Il2CppSystem.Collections.Generic;
-using KogamaStudio.Objects;
-using KogamaStudio.Translator;
-using Il2CppAssets.Scripts.WorldObjectTypes.MVTextMsg;
 
 namespace KogamaStudio
 {
@@ -107,51 +108,42 @@ namespace KogamaStudio
 
         private static void HandleTranslateTextCubes(string targetLanguage)
         {
-            if (_originalTexts.Count == 0)
-            {
-                return;
-            }
+            if (_originalTexts.Count == 0) return;
 
-            _translateQueue.Clear();
+            var textsArray = _originalTexts.Values.ToArray();
+
             foreach (var kvp in _originalTexts)
-            {
-                _translateQueue.Enqueue((kvp.Key, kvp.Value));
-                HandleSetText(kvp.Key, "Queued...");
-            }
+                HandleSetText(kvp.Key, "Translating...");
 
-            MelonCoroutines.Start(ProcessTranslateQueue(targetLanguage));
+            MelonCoroutines.Start(TranslateAllAtOnce(textsArray, targetLanguage));
         }
 
-        private static System.Collections.IEnumerator ProcessTranslateQueue(string lang)
+
+        private static System.Collections.IEnumerator TranslateAllAtOnce(string[] textsArray, string targetLanguage)
         {
-            while (_translateQueue.Count > 0)
+            MessageTranslator.Instance.TranslateArray(textsArray, targetLanguage);
+
+            int wait = 0;
+            while (!MessageTranslator.Instance.TranslationReady && wait < 100)
             {
-                var item = _translateQueue.Dequeue();
-                int id = item.id;
-                string text = item.text;
-
-                HandleSetText(id, "Translating...");
-
-                MessageTranslator.Instance.TranslationReady = false;
-                MessageTranslator.Instance.Translate(text, lang);
-
-                int wait = 0;
-                while (!MessageTranslator.Instance.TranslationReady && wait < 50)
-                {
-                    yield return new WaitForSeconds(0.1f);
-                    wait++;
-                }
-
-                if (MessageTranslator.Instance.TranslationReady)
-                {
-                    HandleSetText(id, MessageTranslator.Instance.LastTranslation);
-                    MessageTranslator.Instance.TranslationReady = false;
-                }
-
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.1f);
+                wait++;
             }
 
-            TextCommand.NotifyUser("Translation complete");
+            if (MessageTranslator.Instance.TranslationReady)
+            {
+                var translations = JsonConvert.DeserializeObject<string[]>(MessageTranslator.Instance.LastTranslation);
+                int index = 0;
+
+                foreach (var kvp in _originalTexts)
+                {
+                    if (index < translations.Length)
+                        HandleSetText(kvp.Key, translations[index].Trim());
+                    index++;
+                }
+
+                TextCommand.NotifyUser("Translation complete");
+            }
         }
 
         private static System.Collections.IEnumerator TranslateAndSetAsync(int id, string text, string lang)
