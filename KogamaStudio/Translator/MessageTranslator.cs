@@ -61,7 +61,7 @@ namespace KogamaStudio.Translator
                 {
                     var payload = new { text, targetLanguage = targetLang };
                     var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-                    var res = client.PostAsync("https://kogamastudio-production.up.railway.app/translate/translate", content).Result;
+                    var res = client.PostAsync("https://kogamastudio.onrender.com/translate/translate", content).Result;
 
                     dynamic data = JsonConvert.DeserializeObject(res.Content.ReadAsStringAsync().Result);
                     LastTranslation = data.translatedText.ToString();

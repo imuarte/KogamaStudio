@@ -26,15 +26,16 @@ namespace TranslateAPI.AppHost.Controllers
             {
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
-                var prompt = $"Translate this text to {req.targetLanguage}: {req.text}";
+                var prompt = $"Translate to {req.targetLanguage}:\n{req.text}";
 
                 var requestBody = new
                 {
                     model = "gpt-4o-mini",
                     messages = new[] {
+                        new { role = "system", content = "You are ONLY a translator. Translate the text and return ONLY the translation. No explanations, no analysis, just the translated text." },
                         new { role = "user", content = prompt }
                     },
-                    temperature = 0.3
+                    temperature = 0.0
                 };
 
 
