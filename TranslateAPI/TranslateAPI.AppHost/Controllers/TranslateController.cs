@@ -37,6 +37,7 @@ namespace TranslateAPI.AppHost.Controllers
                     temperature = 0.3
                 };
 
+
                 var json = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
