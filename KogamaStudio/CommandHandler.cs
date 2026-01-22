@@ -70,7 +70,9 @@ namespace KogamaStudio
             var textMesh = textMsg.msgObject.GetType().GetProperty("TextMesh")?.GetValue(textMsg.msgObject);
             if (textMesh == null) return;
 
-            textMesh.GetType().GetProperty("text")?.SetValue(textMesh, value);
+            var textProperty = textMesh.GetType().GetProperty("text");
+            if (textProperty != null && textProperty.CanWrite)
+                textProperty.SetValue(textMesh, value);
         }
 
         private static void HandleBackupTextCubes()
@@ -110,40 +112,49 @@ namespace KogamaStudio
         {
             if (_originalTexts.Count == 0) return;
 
-            var textsArray = _originalTexts.Values.ToArray();
+            int playerWoId = MVGameControllerBase.LocalPlayer.WoId;
+            var playerWo = MVGameControllerBase.WOCM?.GetWorldObjectClient(playerWoId);
+            Vector3 playerPos = playerWo?.Position ?? Vector3.zero;
 
-            foreach (var kvp in _originalTexts)
-                HandleSetText(kvp.Key, "Translating...");
+            var sortedTexts = _originalTexts.OrderBy(kvp =>
+            {
+                var textWo = MVGameControllerBase.WOCM?.GetWorldObjectClient(kvp.Key);
+                float distance = Vector3.Distance(playerPos, textWo?.Position ?? Vector3.zero);
+                return distance;
+            }).ToList();
 
-            MelonCoroutines.Start(TranslateAllAtOnce(textsArray, targetLanguage));
+            var textsArray = sortedTexts.Select(x => x.Value).ToArray();
+            var textIds = new System.Collections.Generic.List<int>(sortedTexts.Select(x => x.Key));
+
+            foreach (var id in textIds)
+                HandleSetText(id, "Translating...");
+
+            MelonCoroutines.Start(TranslateAllAtOnce(textsArray, textIds, targetLanguage));
         }
 
-
-        private static System.Collections.IEnumerator TranslateAllAtOnce(string[] textsArray, string targetLanguage)
+        private static System.Collections.IEnumerator TranslateAllAtOnce(string[] textsArray, System.Collections.Generic.List<int> textIds, string targetLanguage)
         {
+            int chunkIndex = 0;
+
+            MessageTranslator.Instance.OnChunkTranslated = (translations) =>
+            {
+                for (int i = 0; i < translations.Length && chunkIndex < textIds.Count; i++)
+                {
+                    HandleSetText(textIds[chunkIndex], translations[i].Trim());
+                    chunkIndex++;
+                }
+            };
+
             MessageTranslator.Instance.TranslateArray(textsArray, targetLanguage);
 
             int wait = 0;
-            while (!MessageTranslator.Instance.TranslationReady && wait < 100)
+            while (!MessageTranslator.Instance.TranslationReady && wait < 500)
             {
                 yield return new WaitForSeconds(0.1f);
                 wait++;
             }
 
-            if (MessageTranslator.Instance.TranslationReady)
-            {
-                var translations = JsonConvert.DeserializeObject<string[]>(MessageTranslator.Instance.LastTranslation);
-                int index = 0;
-
-                foreach (var kvp in _originalTexts)
-                {
-                    if (index < translations.Length)
-                        HandleSetText(kvp.Key, translations[index].Trim());
-                    index++;
-                }
-
-                TextCommand.NotifyUser("Translation complete");
-            }
+            TextCommand.NotifyUser("Translation complete");
         }
 
         private static System.Collections.IEnumerator TranslateAndSetAsync(int id, string text, string lang)
@@ -334,7 +345,10 @@ namespace KogamaStudio
                     case "objects_visible":
                         break; 
                     case "test":
-                        HandleSetText(targetWoId, "hello world!");
+                        int woId = MVGameControllerBase.LocalPlayer.WoId;
+                        var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(woId);
+
+                        TextCommand.NotifyUser($"{wo.Position}");
 
                         break;
                     // TRANSLATOR

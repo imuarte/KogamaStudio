@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System.Threading;
 using Il2CppSystem.Linq;
 using MelonLoader;
+using Il2Cpp;
 
 namespace KogamaStudio.Translator
 {
@@ -18,9 +19,11 @@ namespace KogamaStudio.Translator
         private string _lastTranslation = "";
         private bool _translationReady = false;
 
+        public Action<string[]> OnChunkTranslated;
+
         public MessageTranslator()
         {
-            client.Timeout = TimeSpan.FromSeconds(60);
+            client.Timeout = TimeSpan.FromSeconds(120);
         }
 
         public string TargetLanguage
@@ -51,6 +54,51 @@ namespace KogamaStudio.Translator
 
         private void TranslateArrayAsync(string[] texts, string targetLang)
         {
+            const int maxCharsPerRequest = 100;
+            var chunks = new List<string[]>();
+            var currentChunk = new List<string>();
+            int currentCharCount = 0;
+
+            foreach (var text in texts)
+            {
+                if (currentCharCount + text.Length > maxCharsPerRequest && currentChunk.Count > 0)
+                {
+                    chunks.Add(currentChunk.ToArray());
+                    currentChunk = new List<string>();
+                    currentCharCount = 0;
+                }
+
+                currentChunk.Add(text);
+                currentCharCount += text.Length;
+            }
+
+            if (currentChunk.Count > 0)
+                chunks.Add(currentChunk.ToArray());
+
+            var allTranslations = new List<string>();
+
+            foreach (var chunk in chunks)
+            {
+                var chunkTranslations = TranslateChunk(chunk, targetLang);
+
+                if (chunkTranslations == null)
+                {
+                    LastTranslation = "[]";
+                    TranslationReady = true;
+                    return;
+                }
+
+                allTranslations.AddRange(chunkTranslations);
+                OnChunkTranslated?.Invoke(chunkTranslations);
+                System.Threading.Thread.Sleep(500);
+            }
+
+            LastTranslation = JsonConvert.SerializeObject(allTranslations);
+            TranslationReady = true;
+        }
+
+        private string[] TranslateChunk(string[] chunk, string targetLang)
+        {
             int maxRetries = 3;
             int retryCount = 0;
 
@@ -58,22 +106,24 @@ namespace KogamaStudio.Translator
             {
                 try
                 {
-                    var payload = new { texts = texts, targetLanguage = targetLang };
+                    var payload = new { texts = chunk, targetLanguage = targetLang };
                     var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
                     var res = client.PostAsync("https://kogamastudio.onrender.com/translate/translate", content).Result;
 
                     dynamic data = JsonConvert.DeserializeObject(res.Content.ReadAsStringAsync().Result);
-                    LastTranslation = data.translations.ToString();
-                    TranslationReady = true;
-                    return;
+                    var translationsJson = data.translations.ToString();
+                    return JsonConvert.DeserializeObject<string[]>(translationsJson);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    MelonLogger.Warning($"Chunk translation error: {ex.Message}");
                     retryCount++;
                     if (retryCount < maxRetries)
                         System.Threading.Thread.Sleep(1000);
                 }
             }
+
+            return null;
         }
 
         public void Translate(string text, string targetLang = null)
@@ -106,8 +156,9 @@ namespace KogamaStudio.Translator
                     TranslationReady = true;
                     return;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    MelonLogger.Warning($"Translation error: {ex.Message}");
                     retryCount++;
                     if (retryCount < maxRetries)
                         System.Threading.Thread.Sleep(1000);

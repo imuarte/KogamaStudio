@@ -24,6 +24,7 @@ namespace TranslateAPI.AppHost.Controllers
 
             using (var client = new HttpClient())
             {
+                client.Timeout = TimeSpan.FromSeconds(1200);
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
                 var textsJson = JsonSerializer.Serialize(req.texts);
