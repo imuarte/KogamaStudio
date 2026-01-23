@@ -103,6 +103,8 @@ namespace KogamaStudio
             {
                 HandleSetText(kvp.Key, kvp.Value);
             }
+
+            _translatedIds.Clear();
         }
 
         private static System.Collections.Generic.Queue<(int id, string text)> _translateQueue =
@@ -155,6 +157,76 @@ namespace KogamaStudio
             }
 
             TextCommand.NotifyUser("Translation complete");
+        }
+
+        private static Vector3 _lastPlayerPos = Vector3.zero;
+        private static System.Collections.Generic.HashSet<int> _translatedIds = new System.Collections.Generic.HashSet<int>();
+
+        private static bool _isTranslating = false;
+
+        public static void UpdateLiveTranslation()
+        {
+            if (_isTranslating) return;
+
+            int playerWoId = MVGameControllerBase.LocalPlayer.WoId;
+            var playerWo = MVGameControllerBase.WOCM?.GetWorldObjectClient(playerWoId);
+            Vector3 playerPos = playerWo?.Position ?? Vector3.zero;
+
+            var nearbyTexts = _originalTexts.Where(kvp => !_translatedIds.Contains(kvp.Key))
+                .OrderBy(kvp =>
+                {
+                    var textWo = MVGameControllerBase.WOCM?.GetWorldObjectClient(kvp.Key);
+                    return Vector3.Distance(playerPos, textWo?.Position ?? Vector3.zero);
+                }).Take(10).ToList();
+
+            if (nearbyTexts.Count == 0)
+                return;
+
+            var textsArray = nearbyTexts.Select(x => x.Value).ToArray();
+            var textIds = new System.Collections.Generic.List<int>(nearbyTexts.Select(x => x.Key));
+
+            foreach (var id in textIds)
+                HandleSetText(id, "Translating...");
+
+            _isTranslating = true;
+            MelonCoroutines.Start(TranslateAndContinue(textsArray, textIds, AddLinePatch.TranslateTextCubesLanguage));
+
+            foreach (var id in textIds)
+                _translatedIds.Add(id);
+        }
+
+        private static System.Collections.IEnumerator TranslateAndContinue(string[] textsArray, System.Collections.Generic.List<int> textIds, string targetLanguage)
+        {
+            int chunkIndex = 0;
+
+            MessageTranslator.Instance.OnChunkTranslated = (translations) =>
+            {
+                for (int i = 0; i < translations.Length && chunkIndex < textIds.Count; i++)
+                {
+                    HandleSetText(textIds[chunkIndex], translations[i].Trim());
+                    chunkIndex++;
+                }
+            };
+
+            MessageTranslator.Instance.TranslateArray(textsArray, targetLanguage);
+
+            int wait = 0;
+            while (!MessageTranslator.Instance.TranslationReady && wait < 500)
+            {
+                yield return new WaitForSeconds(0.1f);
+                wait++;
+            }
+
+            _isTranslating = false;
+        }
+
+        private static System.Collections.IEnumerator StartLiveTranslation()
+        {
+            while (AddLinePatch.TranslateTextCubesEnabled)
+            {
+                UpdateLiveTranslation();
+                yield return new WaitForSeconds(0.1f);
+            }
         }
 
         private static System.Collections.IEnumerator TranslateAndSetAsync(int id, string text, string lang)
@@ -309,8 +381,13 @@ namespace KogamaStudio
                     case "option_unlimited_config_max":
                         UnlimitedConfig.MaxValue = float.Parse(param);
                         break;
-            
-
+                    // CUSTOM MODEL SCALE
+                    case "option_custom_model_scale_enabled":
+                        CustomModelScale.Enabled = param == "true";
+                        break;
+                    case "option_custom_model_scale_value":
+                        CustomModelScale.Scale = float.Parse(param);
+                        break;
 
                     case "generate_model":
                         if (!ModelBuilder.IsBuilding)
@@ -360,25 +437,30 @@ namespace KogamaStudio
                         AddLinePatch.TranslateOwnMessagesLanguage = param;
                         break;
                     // translate text cubes
-                    case "translate_text_cubes_translate":
-                        HandleBackupTextCubes();
-                        HandleTranslateTextCubes(AddLinePatch.TranslateTextCubesLanguage);
-                        break;
                     case "translate_text_cubes_language":
                         AddLinePatch.TranslateTextCubesLanguage = param;
                         break;
+                    case "translate_text_cubes_translate":
+                        HandleBackupTextCubes();
+                        MelonCoroutines.Start(StartLiveTranslation());
+                        break;
+
                     case "translate_text_cubes_enabled":
+                        AddLinePatch.TranslateTextCubesEnabled = param == "true";
+
                         if (param == "true")
                         {
                             AddLinePatch.TranslateOtherMessagesEnabled = true;
                             HandleBackupTextCubes();
+                            _lastPlayerPos = MVGameControllerBase.LocalPlayer.WoId != -1 ?
+                                MVGameControllerBase.WOCM?.GetWorldObjectClient(MVGameControllerBase.LocalPlayer.WoId)?.Position ?? Vector3.zero
+                                : Vector3.zero;
                         }
                         else
                         {
                             AddLinePatch.TranslateOtherMessagesEnabled = false;
                             HandleRestoreTextCubes();
                         }
-
                         break;
 
                     default:

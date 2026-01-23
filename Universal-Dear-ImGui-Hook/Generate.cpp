@@ -13,13 +13,13 @@ namespace Generate {
 
         if (ImGui::Button("Open Folder")) OpenFolder("Generate\\Models");
 
-        ImGui::PushItemWidth(100);
-        ImGui::InputInt("ID", &targetId);
-        ImGui::PopItemWidth();
+        //ImGui::PushItemWidth(100);
+        //ImGui::InputInt("ID", &targetId);
+        //ImGui::PopItemWidth();
 
-        if (!typing) typing = ImGui::IsItemActive();
+        //if (!typing) typing = ImGui::IsItemActive();
 
-        if (ImGui::Button("Save to file")) SendCommand(("generate_save_model_to_file|" + std::to_string(targetId)).c_str());
+        //if (ImGui::Button("Save to file")) SendCommand(("generate_save_model_to_file|" + std::to_string(targetId)).c_str());
 
         ImGui::Spacing();
         ImGui::Separator();

@@ -21,6 +21,8 @@ namespace Tools {
     static int WOId = -1;
     static float ObjectsRotation[3] = {0.0f, 0.0f, 0.0f};
     static char PlayerName[64] = "";
+    static bool CustomModelScaleEnabled = false;
+    static float CustomModelScaleValue = 4.0f;
 
 
 
@@ -117,6 +119,24 @@ namespace Tools {
             }
         }
 
+        //custom model scale
+        if (ImGui::Checkbox("Custom Model Scale", &CustomModelScaleEnabled)) {
+            if (CustomModelScaleEnabled) SendCommand("option_custom_model_scale_enabled|true");
+            else SendCommand("option_custom_model_scale_enabled|false");
+        }
+
+        if (CustomModelScaleEnabled) {
+            ImGui::PushItemWidth(100);
+            ImGui::InputFloat("Scale", &CustomModelScaleValue);
+            ImGui::PopItemWidth();
+
+            if (!typing) typing = ImGui::IsItemActive();
+
+            if (ImGui::IsItemEdited()) {
+                SendCommand(("option_custom_model_scale_value|" + std::to_string(CustomModelScaleValue)).c_str());
+            }
+        }
+
         // single side painting
         // cause crashes
         if (ImGui::Checkbox("##single_side", &SingleSidePainting)) {
@@ -129,56 +149,56 @@ namespace Tools {
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Enabling this may cause crashes.");
 
-        // objects
-        // get all wo ids
-        if (ImGui::Button("Get All Wo Ids")) SendCommand(("objects_get_all_wo_ids"));
+        //// objects
+        //// get all wo ids
+        //if (ImGui::Button("Get All Wo Ids")) SendCommand(("objects_get_all_wo_ids"));
 
-        ImGui::PushItemWidth(100);
-        ImGui::InputInt("Id", &WOId);
-        ImGui::PopItemWidth();
+        //ImGui::PushItemWidth(100);
+        //ImGui::InputInt("Id", &WOId);
+        //ImGui::PopItemWidth();
 
-        if (!typing) typing = ImGui::IsItemActive();
+        //if (!typing) typing = ImGui::IsItemActive();
 
-        if (ImGui::IsItemEdited()) {
-            SendCommand(("objects_wo_id|" + std::to_string(WOId)).c_str());
-        }
+        //if (ImGui::IsItemEdited()) {
+        //    SendCommand(("objects_wo_id|" + std::to_string(WOId)).c_str());
+        //}
 
-        if (!typing) typing = ImGui::IsItemActive();
+        //if (!typing) typing = ImGui::IsItemActive();
 
-        //clone
-        if (ImGui::Button("Clone")) SendCommand(("objects_clone"));
+        ////clone
+        //if (ImGui::Button("Clone")) SendCommand(("objects_clone"));
 
-        //visible
-        if (ImGui::Button("Toggle Visible")) SendCommand(("objects_visible"));
+        ////visible
+        //if (ImGui::Button("Toggle Visible")) SendCommand(("objects_visible"));
 
-        // remove
-        if (ImGui::Button("Remove")) SendCommand(("objects_remove"));
+        //// remove
+        //if (ImGui::Button("Remove")) SendCommand(("objects_remove"));
 
-        //rotation
+        ////rotation
 
-        ImGui::PushItemWidth(100);
-        ImGui::InputFloat3("Rotation", &ObjectsRotation[0]);
-        ImGui::PopItemWidth();
+        //ImGui::PushItemWidth(100);
+        //ImGui::InputFloat3("Rotation", &ObjectsRotation[0]);
+        //ImGui::PopItemWidth();
 
-        if (!typing) typing = ImGui::IsItemActive();
+        //if (!typing) typing = ImGui::IsItemActive();
 
-        if (ImGui::IsItemEdited()) {
-            SendCommand(("objects_rotation|" + std::to_string(CustomRotStepValue)).c_str());
-        }
+        //if (ImGui::IsItemEdited()) {
+        //    SendCommand(("objects_rotation|" + std::to_string(CustomRotStepValue)).c_str());
+        //}
 
-        // player name
+        //// player name
 
-        ImGui::PushItemWidth(100);
-        ImGui::InputText("Player name", PlayerName, sizeof(PlayerName));
-        ImGui::PopItemWidth();
+        //ImGui::PushItemWidth(100);
+        //ImGui::InputText("Player name", PlayerName, sizeof(PlayerName));
+        //ImGui::PopItemWidth();
 
-        if (!typing) typing = ImGui::IsItemActive();
+        //if (!typing) typing = ImGui::IsItemActive();
 
-        if (ImGui::IsItemEdited()) {
-            SendCommand((std::string("player_name|") + PlayerName).c_str());
-        }
+        //if (ImGui::IsItemEdited()) {
+        //    SendCommand((std::string("player_name|") + PlayerName).c_str());
+        //}
 
-        // test
-        if (ImGui::Button("Test")) SendCommand(("test"));
+        //// test
+        //if (ImGui::Button("Test")) SendCommand(("test"));
     }
 }

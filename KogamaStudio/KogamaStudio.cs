@@ -5,12 +5,12 @@ using UnityEngine.Windows;
 using KogamaStudio.Tools;
 using KogamaStudio.Translator;
 
-[assembly: MelonInfo(typeof(KogamaStudio.Main), "KogamaStudio", "0.3.0-dev", "Amuarte")]
+[assembly: MelonInfo(typeof(KogamaStudio.KogamaStudio), "KogamaStudio", "0.3.0", "Amuarte")]
 [assembly: MelonGame("Multiverse ApS", "KoGaMa")]
 
 namespace KogamaStudio
 {
-    public class Main : MelonMod
+    public class KogamaStudio : MelonMod
     {
         public static bool gameInitialized = false;
         private static bool harmonyPatched = false;
@@ -52,6 +52,11 @@ namespace KogamaStudio
             if (UnityEngine.Input.GetKeyDown(KeyCode.F2))
             {
                 PipeClient.SendCommand("key_down|F2");
+            }
+
+            if (AddLinePatch.TranslateTextCubesEnabled)
+            {
+                CommandHandler.UpdateLiveTranslation();
             }
 
             if (MessageTranslator.Instance.TranslationReady)
