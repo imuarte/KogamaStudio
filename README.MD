@@ -8,6 +8,8 @@ A mod for KoGaMa with resource pack loader and game tools.
 - 🔧 **Game Tools**
   - No Build Limit
   - Single Side Painting
+  - Custom Model Scale
+  - Unlimited Config
   
 ![Example](images/example.png)
 
