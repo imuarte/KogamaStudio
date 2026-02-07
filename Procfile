@@ -1,1 +1,0 @@
-web: cd TranslateAPI.AppHost && dotnet run
