@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Image to JSON</title>
+</head>
+<body>
+<h2>Image to JSON Generator</h2>
+<p>Select your image:</p>
+<input type="file" id="imageInput" accept="image/*">
+<h3>Select Materials (click to toggle):
+  <button onclick="selectAllMaterials()" style="margin-left: 10px;">Select All</button>
+  <button onclick="deselectAllMaterials()">Deselect All</button>
+</h3>
+<div id="materialsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; max-width: 800px;"></div>
+
+<button onclick="generateJSON()">Generate JSON</button>
+<p id="status"></p>
+
+<script>
+const ATLAS_WIDTH = 128;
+const ATLAS_HEIGHT = 8832;
+const MATERIAL_SIZE = 128;
+const MATERIAL_COUNT = Math.floor(ATLAS_HEIGHT / MATERIAL_SIZE);
+
+let atlasData = null;
+let selectedMaterials = new Set([0,1,2,3,4,5,6,7,8,9,10]);
+let materialContainers = {};
+
+const atlasImg = new Image();
+atlasImg.src = 'atlas.png';
+atlasImg.onload = function() {
+  const canvas = document.createElement('canvas');
+  canvas.width = ATLAS_WIDTH;
+  canvas.height = ATLAS_HEIGHT;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(atlasImg, 0, 0);
+  atlasData = ctx.getImageData(0, 0, ATLAS_WIDTH, ATLAS_HEIGHT);
+  
+  createMaterialGrid();
+  document.getElementById('status').textContent = 'Atlas loaded. Ready to generate.';
+};
+atlasImg.onerror = function() {
+  document.getElementById('status').textContent = 'Error: atlas.png not found in same directory';
+};
+
+function createMaterialGrid() {
+  const grid = document.getElementById('materialsGrid');
+  grid.innerHTML = '';
+  materialContainers = {};
+  
+  for (let m = 0; m < MATERIAL_COUNT; m++) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = MATERIAL_SIZE;
+    tempCanvas.height = MATERIAL_SIZE;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    const startY = m * MATERIAL_SIZE;
+    for (let y = 0; y < MATERIAL_SIZE; y++) {
+      for (let x = 0; x < ATLAS_WIDTH; x++) {
+        const idx = ((startY + y) * ATLAS_WIDTH + x) * 4;
+        tempCtx.fillStyle = `rgba(${atlasData.data[idx]},${atlasData.data[idx+1]},${atlasData.data[idx+2]},${atlasData.data[idx+3]})`;
+        tempCtx.fillRect(x, y, 1, 1);
+      }
+    }
+    
+    ctx.drawImage(tempCanvas, 0, 0, MATERIAL_SIZE, MATERIAL_SIZE, 0, 0, 64, 64);
+    
+    const container = document.createElement('div');
+    container.style.cursor = 'pointer';
+    container.style.border = selectedMaterials.has(m) ? '3px solid blue' : '1px solid #ccc';
+    container.style.padding = '2px';
+    container.onclick = () => toggleMaterial(m, container);
+    
+    const label = document.createElement('div');
+    label.textContent = m;
+    label.style.textAlign = 'center';
+    label.style.fontSize = '12px';
+    
+    container.appendChild(canvas);
+    container.appendChild(label);
+    grid.appendChild(container);
+    
+    materialContainers[m] = container;
+  }
+}
+
+function toggleMaterial(id, container) {
+  if (selectedMaterials.has(id)) {
+    selectedMaterials.delete(id);
+    container.style.border = '1px solid #ccc';
+  } else {
+    selectedMaterials.add(id);
+    container.style.border = '3px solid blue';
+  }
+}
+
+function selectAllMaterials() {
+  for (let m = 0; m < MATERIAL_COUNT; m++) {
+    selectedMaterials.add(m);
+    if (materialContainers[m]) {
+      materialContainers[m].style.border = '3px solid blue';
+    }
+  }
+}
+
+function deselectAllMaterials() {
+  selectedMaterials.clear();
+  for (let m = 0; m < MATERIAL_COUNT; m++) {
+    if (materialContainers[m]) {
+      materialContainers[m].style.border = '1px solid #ccc';
+    }
+  }
+}
+
+function preprocessAtlas(TILE_SIZE) {
+  const CELL_SIZE = MATERIAL_SIZE / TILE_SIZE;
+  const materialColors = [];
+  
+  for (let m = 0; m < MATERIAL_COUNT; m++) {
+    const grid = [];
+    for (let cy = 0; cy < TILE_SIZE; cy++) {
+      const row = [];
+      for (let cx = 0; cx < TILE_SIZE; cx++) {
+        const avgColor = getAverageColor(m, cx, cy, CELL_SIZE);
+        row.push(avgColor);
+      }
+      grid.push(row);
+    }
+    materialColors.push(grid);
+  }
+  
+  return materialColors;
+}
+
+function getAverageColor(materialId, cellX, cellY, CELL_SIZE) {
+  const startX = cellX * CELL_SIZE;
+  const startY = materialId * MATERIAL_SIZE + cellY * CELL_SIZE;
+  
+  let r = 0, g = 0, b = 0, a = 0;
+  let count = 0;
+  
+  for (let py = 0; py < CELL_SIZE; py++) {
+    for (let px = 0; px < CELL_SIZE; px++) {
+      const x = startX + px;
+      const y = startY + py;
+      const idx = (y * ATLAS_WIDTH + x) * 4;
+      r += atlasData.data[idx];
+      g += atlasData.data[idx + 1];
+      b += atlasData.data[idx + 2];
+      a += atlasData.data[idx + 3];
+      count++;
+    }
+  }
+  
+  return {
+    r: Math.round(r / count),
+    g: Math.round(g / count),
+    b: Math.round(b / count),
+    a: Math.round(a / count)
+  };
+}
+
+function colorDistance(c1, c2) {
+  const dr = c1.r - c2.r;
+  const dg = c1.g - c2.g;
+  const db = c1.b - c2.b;
+  const da = c1.a - c2.a;
+  return Math.sqrt(dr*dr + dg*dg + db*db + da*da);
+}
+
+function findBestMaterial(color, px, py, materialColors, allowedMaterials) {
+  let bestMaterial = allowedMaterials[0];
+  let bestDistance = Infinity;
+  
+  for (const m of allowedMaterials) {
+    if (m >= MATERIAL_COUNT) continue;
+    const atlasColor = materialColors[m][py][px];
+    const dist = colorDistance(color, atlasColor);
+    if (dist < bestDistance) {
+      bestDistance = dist;
+      bestMaterial = m;
+    }
+  }
+  
+  return bestMaterial;
+}
+
+function generateJSON() {
+  if (!atlasData) {
+    alert('Atlas not loaded yet. Wait a moment.');
+    return;
+  }
+  
+  const allowedMaterials = Array.from(selectedMaterials);
+  
+  if (allowedMaterials.length === 0) {
+    alert('Select at least one material');
+    return;
+  }
+  
+  const modelScale = 0.5;
+  const TILE_SIZE = Math.round(2 / modelScale);
+  
+  document.getElementById('status').textContent = 'Processing atlas...';
+  const materialColors = preprocessAtlas(TILE_SIZE);
+  
+  const fileInput = document.getElementById('imageInput');
+  if (!fileInput.files.length) {
+    alert('Select an image file');
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  const img = new Image();
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+      
+      document.getElementById('status').textContent = 'Processing...';
+      
+      const cubes = [];
+      
+      for (let y = 0; y < img.height; y++) {
+        for (let x = 0; x < img.width; x++) {
+          const idx = (y * img.width + x) * 4;
+          const color = {
+            r: imageData.data[idx],
+            g: imageData.data[idx + 1],
+            b: imageData.data[idx + 2],
+            a: imageData.data[idx + 3]
+          };
+          
+          if (color.a < 128) continue;
+          
+          const px = x % TILE_SIZE;
+          const py = y % TILE_SIZE;
+          
+          const material = findBestMaterial(color, px, py, materialColors, allowedMaterials);
+          
+          cubes.push({
+            x: x,
+            y: img.height - 1 - y,
+            z: 0,
+            materials: [material, material, material, material, material, material]
+          });
+        }
+      }
+      
+      const json = JSON.stringify({cubes}, null, 4);
+      
+      const blob = new Blob([json], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name.replace(/\.[^.]+$/, '.json');
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      document.getElementById('status').textContent = `Done! Generated ${cubes.length} items.`;
+    };
+    img.src = e.target.result;
+  };
+  
+  reader.readAsDataURL(file);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>PLY to JSON Converter</title>
+</head>
+<body>
+
+<h2>PLY to JSON Converter</h2>
+
+<input type="file" id="fileInput" accept=".ply">
+<div>
+  <label>Offset X: <input type="number" id="offsetX" value="0" step="0.1"></label>
+  <label>Offset Y: <input type="number" id="offsetY" value="0" step="0.1"></label>
+  <label>Offset Z: <input type="number" id="offsetZ" value="0" step="0.1"></label>
+</div>
+<button onclick="convertFile()">Convert</button>
+
+
+
+<script>
+function convertFile() {
+  const fileInput = document.getElementById('fileInput');
+
+  const offsetX = parseFloat(document.getElementById('offsetX').value) || 0;
+  const offsetY = parseFloat(document.getElementById('offsetY').value) || 0;
+  const offsetZ = parseFloat(document.getElementById('offsetZ').value) || 0;
+  
+  if (!fileInput.files.length) {
+    alert('Select a PLY file');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    const content = e.target.result;
+    const headerEnd = content.indexOf('end_header');
+    const headerText = content.substring(0, headerEnd);
+    const vertexMatch = headerText.match(/element vertex (\d+)/);
+    const vertexCount = vertexMatch ? parseInt(vertexMatch[1]) : 0;
+    
+    const vertexData = content.substring(headerEnd + 10);
+    const lines = vertexData.split(/[\r\n]+/).filter(line => line.trim());
+    
+    const vertices = [];
+    const uniqueX = {}, uniqueY = {}, uniqueZ = {};
+    
+    for (let i = 0; i < Math.min(vertexCount, lines.length); i++) {
+      const match = lines[i].match(/([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)/);
+      if (match) {
+        const x = parseFloat(match[1]) + offsetX;
+        const y = parseFloat(match[3]) + offsetY;
+        const z = parseFloat(match[5]) + offsetZ;
+        vertices.push({x, y, z});
+        
+        const xk = x.toFixed(6);
+        const yk = y.toFixed(6);
+        const zk = z.toFixed(6);
+        uniqueX[xk] = x;
+        uniqueY[yk] = y;
+        uniqueZ[zk] = z;
+      }
+    }
+    
+    function sortMap(obj) {
+      const list = Object.values(obj).sort((a, b) => a - b);
+      const map = {};
+      list.forEach((v, i) => {
+        map[v.toFixed(6)] = i;
+      });
+      return map;
+    }
+    
+    const xMap = sortMap(uniqueX);
+    const yMap = sortMap(uniqueY);
+    const zMap = sortMap(uniqueZ);
+    
+    const cubes = [];
+    const seen = new Set();
+    
+    vertices.forEach(v => {
+      const xi = xMap[v.x.toFixed(6)];
+      const yi = yMap[v.y.toFixed(6)];
+      const zi = zMap[v.z.toFixed(6)];
+      const key = `${xi},${yi},${zi}`;
+      
+      if (!seen.has(key)) {
+        cubes.push({x: xi, y: yi, z: zi});
+        seen.add(key);
+      }
+    });
+    
+    const json = JSON.stringify({cubes}, null, 4);
+    
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name.replace('.ply', '.json');
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  
+  reader.readAsText(file);
+}
+</script>
+
+</body>
+</html>
