@@ -10,12 +10,21 @@
 #include "Generate.h"
 #include "About.h"
 #include "Translate.h"
+#include "Properties.h"
+#include "Clipboard.h"
+#include "Appearance.h"
 
 namespace menu {
     bool isOpen = false;
     float test = 0.0f;
     static bool noTitleBar = false;
     static HMODULE hModule = nullptr;
+
+    namespace Windows {
+        static bool propertiesOpen = false;
+        static bool clipboardOpen = false;
+        static bool appearanceOpen = false;
+    }
 
     void Init() {
         static float scale = 1.0f;
@@ -62,11 +71,8 @@ namespace menu {
         // Style setup (one-time)
         static bool styled = false;
         if (!styled) {
-            ImGui::StyleColorsDark();
-            ImVec4* colors = ImGui::GetStyle().Colors;
-
+            Appearance::LoadSettings();
             ImGui::GetStyle().ScaleAllSizes(scale);
-
             styled = true;
             DebugLog("[menu] Style applied.\n");
         }
@@ -116,5 +122,21 @@ namespace menu {
             }
         }
         ImGui::End();
+
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("Windows"))
+            {
+                ImGui::MenuItem("Properties", nullptr, &Windows::propertiesOpen);
+                ImGui::MenuItem("Clipboard", nullptr, &Windows::clipboardOpen);
+                ImGui::MenuItem("Appearance", nullptr, &Windows::appearanceOpen);
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+
+        if (Windows::propertiesOpen) Properties::Render();
+        if (Windows::clipboardOpen) Clipboard::Render();
+        if (Windows::appearanceOpen) Appearance::Render();
     }
 }

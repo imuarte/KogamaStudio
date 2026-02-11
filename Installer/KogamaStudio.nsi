@@ -16,75 +16,16 @@ Var modeInstallBtn
 Var modeUninstallBtn
 
 !insertmacro MUI_LANGUAGE "English"
-!insertmacro MUI_LANGUAGE "Spanish"
-!insertmacro MUI_LANGUAGE "PortugueseBR"
-!insertmacro MUI_LANGUAGE "Russian"
-!insertmacro MUI_LANGUAGE "Polish"
-!insertmacro MUI_LANGUAGE "Italian"
 
-; Tłumaczenia
 LangString ChooseAction ${LANG_ENGLISH} "Choose action:"
-LangString ChooseAction ${LANG_SPANISH} "Elige una acción:"
-LangString ChooseAction ${LANG_PORTUGUESEBR} "Escolha uma ação:"
-LangString ChooseAction ${LANG_RUSSIAN} "Выберите действие:"
-LangString ChooseAction ${LANG_POLISH} "Wybierz akcję:"
-LangString ChooseAction ${LANG_ITALIAN} "Scegli un'azione:"
-
 LangString InstallBtn ${LANG_ENGLISH} "Install KogamaStudio"
-LangString InstallBtn ${LANG_SPANISH} "Instalar KogamaStudio"
-LangString InstallBtn ${LANG_PORTUGUESEBR} "Instalar KogamaStudio"
-LangString InstallBtn ${LANG_RUSSIAN} "Установить KogamaStudio"
-LangString InstallBtn ${LANG_POLISH} "Zainstaluj KogamaStudio"
-LangString InstallBtn ${LANG_ITALIAN} "Installa KogamaStudio"
-
 LangString UninstallBtn ${LANG_ENGLISH} "Uninstall KogamaStudio"
-LangString UninstallBtn ${LANG_SPANISH} "Desinstalar KogamaStudio"
-LangString UninstallBtn ${LANG_PORTUGUESEBR} "Desinstalar KogamaStudio"
-LangString UninstallBtn ${LANG_RUSSIAN} "Удалить KogamaStudio"
-LangString UninstallBtn ${LANG_POLISH} "Odinstaluj KogamaStudio"
-LangString UninstallBtn ${LANG_ITALIAN} "Disinstalla KogamaStudio"
-
 LangString SelectServerInstall ${LANG_ENGLISH} "Select KogamaLauncher Server:"
-LangString SelectServerInstall ${LANG_SPANISH} "Selecciona el servidor de KogamaLauncher:"
-LangString SelectServerInstall ${LANG_PORTUGUESEBR} "Selecione o servidor KogamaLauncher:"
-LangString SelectServerInstall ${LANG_RUSSIAN} "Выберите сервер KogamaLauncher:"
-LangString SelectServerInstall ${LANG_POLISH} "Wybierz serwer KogamaLauncher:"
-LangString SelectServerInstall ${LANG_ITALIAN} "Seleziona il server KogamaLauncher:"
-
 LangString SelectServerUninstall ${LANG_ENGLISH} "Select KogamaLauncher Server to remove files from:"
-LangString SelectServerUninstall ${LANG_SPANISH} "Selecciona el servidor de KogamaLauncher para eliminar archivos:"
-LangString SelectServerUninstall ${LANG_PORTUGUESEBR} "Selecione o servidor KogamaLauncher para remover arquivos:"
-LangString SelectServerUninstall ${LANG_RUSSIAN} "Выберите сервер KogamaLauncher для удаления файлов:"
-LangString SelectServerUninstall ${LANG_POLISH} "Wybierz serwer KogamaLauncher, z którego usunąć pliki:"
-LangString SelectServerUninstall ${LANG_ITALIAN} "Seleziona il server KogamaLauncher da cui rimuovere i file:"
-
 LangString CustomFolder ${LANG_ENGLISH} "Custom folder"
-LangString CustomFolder ${LANG_SPANISH} "Carpeta personalizada"
-LangString CustomFolder ${LANG_PORTUGUESEBR} "Pasta personalizada"
-LangString CustomFolder ${LANG_RUSSIAN} "Другая папка"
-LangString CustomFolder ${LANG_POLISH} "Własny folder"
-LangString CustomFolder ${LANG_ITALIAN} "Cartella personalizzata"
-
 LangString RemoveUserData ${LANG_ENGLISH} "Do you want to remove user data from KogamaStudio folder?$\n(Settings, saves, etc. will be deleted)"
-LangString RemoveUserData ${LANG_SPANISH} "¿Quieres eliminar los datos de usuario de la carpeta KogamaStudio?$\n(Se eliminarán configuraciones, guardados, etc.)"
-LangString RemoveUserData ${LANG_PORTUGUESEBR} "Deseja remover os dados do usuário da pasta KogamaStudio?$\n(Configurações, salvamentos, etc. serão excluídos)"
-LangString RemoveUserData ${LANG_RUSSIAN} "Удалить пользовательские данные из папки KogamaStudio?$\n(Настройки, сохранения и т.д. будут удалены)"
-LangString RemoveUserData ${LANG_POLISH} "Czy chcesz usunąć dane użytkownika z folderu KogamaStudio?$\n(Ustawienia, zapisy itp. zostaną usunięte)"
-LangString RemoveUserData ${LANG_ITALIAN} "Vuoi rimuovere i dati utente dalla cartella KogamaStudio?$\n(Impostazioni, salvataggi, ecc. verranno eliminati)"
-
 LangString UninstallSuccess ${LANG_ENGLISH} "KogamaStudio uninstalled successfully!"
-LangString UninstallSuccess ${LANG_SPANISH} "¡KogamaStudio desinstalado correctamente!"
-LangString UninstallSuccess ${LANG_PORTUGUESEBR} "KogamaStudio desinstalado com sucesso!"
-LangString UninstallSuccess ${LANG_RUSSIAN} "KogamaStudio успешно удалён!"
-LangString UninstallSuccess ${LANG_POLISH} "KogamaStudio odinstalowany pomyślnie!"
-LangString UninstallSuccess ${LANG_ITALIAN} "KogamaStudio disinstallato con successo!"
-
-LangString InstallSuccess ${LANG_ENGLISH} "KogamaStudio v0.2.0 installed successfully!"
-LangString InstallSuccess ${LANG_SPANISH} "¡KogamaStudio v0.2.0 instalado correctamente!"
-LangString InstallSuccess ${LANG_PORTUGUESEBR} "KogamaStudio v0.2.0 instalado com sucesso!"
-LangString InstallSuccess ${LANG_RUSSIAN} "KogamaStudio v0.2.0 успешно установлен!"
-LangString InstallSuccess ${LANG_POLISH} "KogamaStudio v0.2.0 zainstalowany pomyślnie!"
-LangString InstallSuccess ${LANG_ITALIAN} "KogamaStudio v0.2.0 installato con successo!"
+LangString InstallSuccess ${LANG_ENGLISH} "KogamaStudio v0.3.0 installed successfully!"
 
 Page Custom ModePage LeaveModeSelectPage
 Page Custom ServerSelectPage LeaveServerSelectPage
@@ -174,7 +115,6 @@ FunctionEnd
 
 Section "Main"
   ${If} $installMode == "uninstall"
-    ; Usuń zainstalowane pliki z launchera
     RMDir /r "$selectedServer\MelonLoader"
     RMDir /r "$selectedServer\Mods"
     RMDir /r "$selectedServer\Plugins"
@@ -182,7 +122,6 @@ Section "Main"
     RMDir /r "$selectedServer\UserLibs"
     Delete "$selectedServer\version.dll"
     
-    ; Zapytaj o usunięcie danych użytkownika
     MessageBox MB_YESNO "$(RemoveUserData)" IDYES removeData IDNO keepData
     
     removeData:
@@ -199,7 +138,6 @@ Section "Main"
       Quit
   ${EndIf}
   
-  ; Instalacja
   SetOutPath "$LOCALAPPDATA\KogamaStudio"
   File /r "files_for_appdata\KogamaStudio\*.*"
   

@@ -130,6 +130,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="About.cpp" />
+    <ClCompile Include="Appearance.cpp" />
+    <ClCompile Include="Clipboard.cpp" />
     <ClCompile Include="d3d9hook.cpp" />
     <ClCompile Include="d3d10hook.cpp" />
     <ClCompile Include="d3d11hook.cpp" />
@@ -154,6 +156,7 @@
     <ClCompile Include="MenuHelpers.cpp" />
     <ClCompile Include="mousehooks.cpp" />
     <ClCompile Include="pipe.cpp" />
+    <ClCompile Include="Properties.cpp" />
     <ClCompile Include="ResourcePackLoader.cpp" />
     <ClCompile Include="ResourcePackLoader.h" />
     <ClCompile Include="ResourcePacks.cpp" />
@@ -165,6 +168,8 @@
     <ClInclude Include="..\..\..\..\Downloads\json.hpp" />
     <ClInclude Include="..\..\..\..\Downloads\stb_image.h" />
     <ClInclude Include="About.h" />
+    <ClInclude Include="Appearance.h" />
+    <ClInclude Include="Clipboard.h" />
     <ClInclude Include="Generate.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
@@ -181,6 +186,7 @@
     <ClInclude Include="MenuHelpers.h" />
     <ClInclude Include="namespaces.h" />
     <ClInclude Include="pipe.h" />
+    <ClInclude Include="Properties.h" />
     <ClInclude Include="ResourcePacks.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Tools.h" />

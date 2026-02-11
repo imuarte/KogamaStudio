@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
 using Il2Cpp;
+using KogamaModFramework.Operations;
 
 namespace KogamaStudio.AntiBan
 {
@@ -12,10 +13,14 @@ namespace KogamaStudio.AntiBan
 
     internal class ThemesPatch
     {
-        [HarmonyPatch(typeof(Theme), "Activate")]
+        [HarmonyPatch(typeof(Theme), "Initialize", [typeof(int)])]
         [HarmonyPrefix]
-        private static bool ThemeActivatePrefix()
+        private static bool ThemeInitializeIntPrefix(int woid)
         {
+            var wo = WorldObjectOperations.GetObject(woid) as MVWorldObjectClient;
+            if (wo != null) return false;
+
+            wo.Destroy();
             return false;
         }
     }

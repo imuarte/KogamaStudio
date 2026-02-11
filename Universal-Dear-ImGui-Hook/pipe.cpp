@@ -3,6 +3,8 @@
 #include <thread>
 #include <string>
 #include "pipe.h"
+#include "Properties.h"
+#include "Clipboard.h"
 
 
 namespace pipe {
@@ -49,6 +51,56 @@ namespace pipe {
         {
             float progress = std::stof(param);
             generateProgress = progress;
+        }
+        else if (command == "properties_position_x")
+        {
+            Properties::positionX = std::stof(param);
+        }
+        else if (command == "properties_position_y")
+        {
+            Properties::positionY = std::stof(param);
+        }
+        else if (command == "properties_position_z")
+        {
+            Properties::positionZ = std::stof(param);
+        }
+        else if (command == "properties_rotation_x")
+        {
+            Properties::rotationX = std::stof(param);
+        }
+        else if (command == "properties_rotation_y")
+        {
+            Properties::rotationY = std::stof(param);
+        }
+        else if (command == "properties_rotation_z")
+        {
+            Properties::rotationZ = std::stof(param);
+        }
+        else if (command == "properties_object_id")
+        {
+            Properties::targetObjectId = param;
+        }
+        else if (command == "properties_is_model")
+        {
+            if (param == "true")
+            {
+                Properties::isModel = true;
+            }
+            else if (param == "false")
+            {
+                Properties::isModel = false;
+            }
+        }
+        else if (command == "clipboard_preview_paste_model")
+        {
+            if (param == "true")
+            {
+                Properties::isPrevievPaste = true;
+            }
+            else if (param == "false")
+            {
+                Properties::isPrevievPaste = false;
+            }
         }
     }
 

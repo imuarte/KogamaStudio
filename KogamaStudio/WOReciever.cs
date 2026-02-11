@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Il2Cpp;
+using Il2CppMV.WorldObject;
 using MelonLoader;
 
 namespace KogamaStudio;
@@ -24,5 +25,12 @@ internal static class WOReciever
             MelonLogger.Msg($"CreateQueryEvent: {root.ToString()},\t{instigatorActorNumber}");
             OnWORecieved.Invoke(root, instigatorActorNumber);
         }
+    }
+
+    [HarmonyPatch(typeof(MVWorldObjectClientManagerNetwork), "AddWorldObject")]
+    [HarmonyPostfix]
+    private static void AddWorldObjectPostfix()
+    {
+        MelonLogger.Msg("test");
     }
 }

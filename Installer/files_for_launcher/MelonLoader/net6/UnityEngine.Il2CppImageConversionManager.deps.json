@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v6.0": {},
     ".NETCoreApp,Version=v6.0/win-x64": {
-      "UnityEngine.Il2CppImageConversionManager/0.7.2.2385": {
+      "UnityEngine.Il2CppImageConversionManager/0.7.2.2388": {
         "dependencies": {
           "Il2CppInterop.ReferenceLibs": "1.0.0",
           "Il2CppInterop.Runtime": "1.5.1"
@@ -74,7 +74,7 @@
     }
   },
   "libraries": {
-    "UnityEngine.Il2CppImageConversionManager/0.7.2.2385": {
+    "UnityEngine.Il2CppImageConversionManager/0.7.2.2388": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

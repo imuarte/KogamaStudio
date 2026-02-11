@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "pipe.h"
+#include "Appearance.h"
 
 namespace hooks_dx11 {
     using Microsoft::WRL::ComPtr;
@@ -76,6 +77,22 @@ namespace hooks_dx11 {
 
                 ImGui::CreateContext();
                 ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+
+                Appearance::LoadSettings();
+                bool fontLoaded = false;
+                if (!Appearance::fontPath.empty() && Appearance::fontSize > 0) {
+                    FILE* f = nullptr;
+                    if (fopen_s(&f, Appearance::fontPath.c_str(), "rb") == 0 && f != nullptr) {
+                        fclose(f);
+                        fontLoaded = (io.Fonts->AddFontFromFileTTF(Appearance::fontPath.c_str(), Appearance::fontSize) != nullptr);
+                    }
+                }
+                if (!fontLoaded) {
+                    io.Fonts->AddFontDefault();
+                }
+                io.Fonts->Build();
+
                 io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
                 ImGui::StyleColorsDark();
                 ImGui_ImplWin32_Init(desc.OutputWindow);

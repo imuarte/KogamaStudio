@@ -61,4 +61,26 @@ namespace menu {
         FindClose(h);
     }
 
+    void FloatInput(const char* label, float& value, const char* commandPrefix, bool& typing, float width) {
+        ImGui::PushItemWidth(width);
+        ImGui::InputFloat(label, &value);
+        ImGui::PopItemWidth();
+
+        if (!typing) typing = ImGui::IsItemActive();
+
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            SendCommand((std::string(commandPrefix) + "|" + std::to_string(value)).c_str());
+        }
+    }
+
+    void IntInput(const char* label, int& value, const char* commandPrefix, bool& typing, float width) {
+        ImGui::PushItemWidth(width);
+        ImGui::InputInt(label, &value);
+        ImGui::PopItemWidth();
+        if (!typing) typing = ImGui::IsItemActive();
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            SendCommand((std::string(commandPrefix) + "|" + std::to_string(value)).c_str());
+        }
+    }
+
 }

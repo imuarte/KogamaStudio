@@ -19,6 +19,9 @@
     <Filter Include="Sources Files\menu">
       <UniqueIdentifier>{41dc1cb8-d11b-4cfb-956a-26d2918815dc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Sources Files\pipe">
+      <UniqueIdentifier>{3ae05d4d-9213-4f18-b455-d5f835ae1c11}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -93,9 +96,6 @@
     <ClCompile Include="ResourcePackLoader.cpp">
       <Filter>Sources Files</Filter>
     </ClCompile>
-    <ClCompile Include="pipe.cpp">
-      <Filter>Sources Files</Filter>
-    </ClCompile>
     <ClCompile Include="MenuHelpers.cpp">
       <Filter>Sources Files\menu</Filter>
     </ClCompile>
@@ -112,6 +112,18 @@
       <Filter>Sources Files\menu</Filter>
     </ClCompile>
     <ClCompile Include="Translate.cpp">
+      <Filter>Sources Files\menu</Filter>
+    </ClCompile>
+    <ClCompile Include="Properties.cpp">
+      <Filter>Sources Files\menu</Filter>
+    </ClCompile>
+    <ClCompile Include="pipe.cpp">
+      <Filter>Sources Files\pipe</Filter>
+    </ClCompile>
+    <ClCompile Include="Clipboard.cpp">
+      <Filter>Sources Files\menu</Filter>
+    </ClCompile>
+    <ClCompile Include="Appearance.cpp">
       <Filter>Sources Files\menu</Filter>
     </ClCompile>
   </ItemGroup>
@@ -164,9 +176,6 @@
     <ClInclude Include="..\..\..\..\Downloads\stb_image.h">
       <Filter>Sources Files</Filter>
     </ClInclude>
-    <ClInclude Include="pipe.h">
-      <Filter>Sources Files</Filter>
-    </ClInclude>
     <ClInclude Include="MenuHelpers.h">
       <Filter>Sources Files\menu</Filter>
     </ClInclude>
@@ -183,6 +192,18 @@
       <Filter>Sources Files\menu</Filter>
     </ClInclude>
     <ClInclude Include="Translate.h">
+      <Filter>Sources Files\menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Properties.h">
+      <Filter>Sources Files\menu</Filter>
+    </ClInclude>
+    <ClInclude Include="pipe.h">
+      <Filter>Sources Files\pipe</Filter>
+    </ClInclude>
+    <ClInclude Include="Clipboard.h">
+      <Filter>Sources Files\menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Appearance.h">
       <Filter>Sources Files\menu</Filter>
     </ClInclude>
   </ItemGroup>

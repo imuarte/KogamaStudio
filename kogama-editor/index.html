@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>KogamaStudio</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+
+    <body>
+        <h1>KogamaStudio</h1>
+        
+        <label>
+            <input type="checkbox" id="option_no_build_limit" />
+            No Build Limit
+        </label>
+        <br>
+
+        <label>
+            <input type="checkbox" id="option_single_side_painting" />
+            Single Side Painting
+        </label>
+        <br>
+
+        <label>
+            <input type="checkbox" id="option_custom_speed_enabled" data-toggle="speed_group"/>
+            Custom Speed
+        </label>
+        <br>
+        <label id="speed_group" style="display: none;">
+            <input type="number" id="option_custom_speed_value" step="any" />
+            Value
+        </label>
+
+        <label>
+            <input type="checkbox" id="option_anti_afk" />
+            Anti AFK
+        </label>
+        <br>
+
+        <label>
+            <input type="checkbox" id="option_custom_grid_size_enabled" data-toggle="grid_size_group"/>
+            Custom Grid Size
+        </label>
+        <br>
+        <label id="grid_size_group" style="display: none;">
+            <input type="number" id="option_custom_grid_size" step="any" />
+            Value
+        </label>
+
+
+        <script src="app.js"></script>
+    </body>
+</html>

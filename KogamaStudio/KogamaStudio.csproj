@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net6</TargetFramework>
 	<Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 	<PlatformTarget>x64</PlatformTarget>
@@ -19,6 +19,9 @@
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>..\..\..\..\AppData\Local\KogamaLauncher-WWW\Launcher\Standalone\MelonLoader\Il2CppAssemblies\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
+    <Reference Include="ClickableTransparentOverlay">
+      <HintPath>Lib\ClickableTransparentOverlay.dll</HintPath>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>..\..\..\..\AppData\Local\KogamaLauncher-WWW\Launcher\Standalone\MelonLoader\net6\Il2CppInterop.Runtime.dll</HintPath>
@@ -42,6 +45,9 @@
     <Reference Include="Il2CppSystem.Core">
       <HintPath>..\..\..\..\AppData\Local\KogamaLauncher-WWW\Launcher\Standalone\MelonLoader\Il2CppAssemblies\Il2CppSystem.Core.dll</HintPath>
     </Reference>
+    <Reference Include="KogamaModFramework">
+      <HintPath>Lib\KogamaModFramework.dll</HintPath>
+    </Reference>
     <Reference Include="MelonLoader">
       <HintPath>..\..\..\..\AppData\Local\KogamaLauncher-WWW\Launcher\Standalone\MelonLoader\net6\MelonLoader.dll</HintPath>
       <Private>False</Private>
@@ -57,6 +63,12 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\..\AppData\Local\KogamaLauncher-WWW\Launcher\Standalone\MelonLoader\net6\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+	<Reference Include="Il2CppPhoton3Unity3D">
+		<HintPath>Lib\Il2CppPhoton3Unity3D.dll</HintPath>
+	</Reference>
+    <Reference Include="Il2Cpp__Generated">
+	    <HintPath>Lib\Il2Cpp__Generated.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
       <HintPath>..\..\..\..\AppData\Local\KogamaLauncher-WWW\Launcher\Standalone\MelonLoader\Il2CppAssemblies\Unity.TextMeshPro.dll</HintPath>
@@ -76,6 +88,10 @@
     <Reference Include="UnityEngine.UI">
       <HintPath>..\..\..\..\AppData\Local\KogamaLauncher-WWW\Launcher\Standalone\MelonLoader\Il2CppAssemblies\UnityEngine.UI.dll</HintPath>
     </Reference>
+	  <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\..\..\AppData\Local\KogamaLauncher-WWW\Launcher\Standalone\MelonLoader\Il2CppAssemblies\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    
   </ItemGroup>
 
 </Project>

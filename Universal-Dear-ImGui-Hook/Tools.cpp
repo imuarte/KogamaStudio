@@ -34,6 +34,12 @@ namespace Tools {
             else SendCommand("option_no_build_limit|false");
         }
 
+        // single side painting
+        if (ImGui::Checkbox("Single Side Painting", &SingleSidePainting)) {
+            if (SingleSidePainting) SendCommand("option_single_side_painting|true");
+            else SendCommand("option_single_side_painting|false");
+        }
+
         // anti afk
         if (ImGui::Checkbox("Anti AFK", &AntiAFK)) {
             if (AntiAFK) SendCommand("option_anti_afk|true");
@@ -136,69 +142,9 @@ namespace Tools {
                 SendCommand(("option_custom_model_scale_value|" + std::to_string(CustomModelScaleValue)).c_str());
             }
         }
-
-        // single side painting
-        // cause crashes
-        if (ImGui::Checkbox("##single_side", &SingleSidePainting)) {
-            if (SingleSidePainting) SendCommand("option_single_side_painting|true");
-            else SendCommand("option_single_side_painting|false");
-        }
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Single Side Painting [EXPERIMENTAL]");
-
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Enabling this may cause crashes.");
-
-        //// objects
-        //// get all wo ids
-        //if (ImGui::Button("Get All Wo Ids")) SendCommand(("objects_get_all_wo_ids"));
-
-        //ImGui::PushItemWidth(100);
-        //ImGui::InputInt("Id", &WOId);
-        //ImGui::PopItemWidth();
-
-        //if (!typing) typing = ImGui::IsItemActive();
-
-        //if (ImGui::IsItemEdited()) {
-        //    SendCommand(("objects_wo_id|" + std::to_string(WOId)).c_str());
-        //}
-
-        //if (!typing) typing = ImGui::IsItemActive();
-
-        ////clone
-        //if (ImGui::Button("Clone")) SendCommand(("objects_clone"));
-
-        ////visible
-        //if (ImGui::Button("Toggle Visible")) SendCommand(("objects_visible"));
-
-        //// remove
-        //if (ImGui::Button("Remove")) SendCommand(("objects_remove"));
-
-        ////rotation
-
-        //ImGui::PushItemWidth(100);
-        //ImGui::InputFloat3("Rotation", &ObjectsRotation[0]);
-        //ImGui::PopItemWidth();
-
-        //if (!typing) typing = ImGui::IsItemActive();
-
-        //if (ImGui::IsItemEdited()) {
-        //    SendCommand(("objects_rotation|" + std::to_string(CustomRotStepValue)).c_str());
-        //}
-
-        //// player name
-
-        //ImGui::PushItemWidth(100);
-        //ImGui::InputText("Player name", PlayerName, sizeof(PlayerName));
-        //ImGui::PopItemWidth();
-
-        //if (!typing) typing = ImGui::IsItemActive();
-
-        //if (ImGui::IsItemEdited()) {
-        //    SendCommand((std::string("player_name|") + PlayerName).c_str());
-        //}
-
-        //// test
+      
+        // test
         //if (ImGui::Button("Test")) SendCommand(("test"));
+
     }
 }

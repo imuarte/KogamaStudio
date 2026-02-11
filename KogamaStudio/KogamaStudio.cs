@@ -1,21 +1,25 @@
-﻿using MelonLoader;
-using UnityEngine;
-using Il2Cpp;
-using UnityEngine.Windows;
+﻿using Il2Cpp;
+using KogamaStudio.Camera;
 using KogamaStudio.Tools;
 using KogamaStudio.Translator;
+using MelonLoader;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.Windows;
 
-[assembly: MelonInfo(typeof(KogamaStudio.KogamaStudio), "KogamaStudio", "0.3.0", "Amuarte")]
+[assembly: MelonInfo(typeof(KogamaStudio.KogamaStudio), "KogamaStudio", "0.4.0", "Amuarte")]
 [assembly: MelonGame("Multiverse ApS", "KoGaMa")]
 
 namespace KogamaStudio
 {
     public class KogamaStudio : MelonMod
     {
+
         public static bool gameInitialized = false;
         private static bool harmonyPatched = false;
         public override void OnInitializeMelon()
         {
+
             if (harmonyPatched) return;
 
             DllLoader.Load("KogamaStudio-ImGui-Hook.dll");
@@ -38,14 +42,13 @@ namespace KogamaStudio
             {
                 if (MVGameControllerBase.IsInitialized)
                 {
-                    //HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("KogamaStudio");
-                    //harmony.PatchAll();
-
                     MelonLogger.Msg("KogamaStudio loaded!");
+
 
                     gameInitialized = true;
                     PipeClient.SendCommand("game_initialized");
-                    TextCommand.NotifyUser("<b>KogamaStudio</b> v0.3.0 loaded!\nPress <b>F2</b> to open menu.");
+                    TextCommand.NotifyUser("<b>KogamaStudio</b> v0.4.0 loaded!\nPress <b>F2</b> to open menu.");
+
                 }
             }
 
@@ -56,7 +59,7 @@ namespace KogamaStudio
 
             if (AddLinePatch.TranslateTextCubesEnabled)
             {
-                CommandHandler.UpdateLiveTranslation();
+                TranslationManager.UpdateLiveTranslation();
             }
 
             if (MessageTranslator.Instance.TranslationReady)
@@ -66,6 +69,14 @@ namespace KogamaStudio
                     AddLinePatch.SendMessageControlInstance.SendChatMessage(MessageTranslator.Instance.LastTranslation);
                 }
                 AddLinePatch.CurrentTranslationMode = AddLinePatch.MessageTranslationType.None;
+            }
+
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F3))
+            {
+                if (Freecam.IsEnabled)
+                    Freecam.Disable();
+                else
+                    Freecam.Enable();
             }
         }
     }

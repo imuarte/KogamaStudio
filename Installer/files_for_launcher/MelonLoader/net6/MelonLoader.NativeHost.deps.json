@@ -7,10 +7,10 @@
   "targets": {
     ".NETCoreApp,Version=v6.0": {},
     ".NETCoreApp,Version=v6.0/win-x64": {
-      "MelonLoader.NativeHost/0.7.2.2385": {
+      "MelonLoader.NativeHost/0.7.2.2388": {
         "dependencies": {
           "LavaGang.MelonLoader": "0.7.2",
-          "MelonLoader": "0.7.2.2385"
+          "MelonLoader": "0.7.2.2388"
         },
         "runtime": {
           "MelonLoader.NativeHost.dll": {}
@@ -19,16 +19,16 @@
       "LavaGang.MelonLoader/0.7.2": {
         "runtime": {
           "MelonLoader.dll": {
-            "assemblyVersion": "0.7.2.2385",
-            "fileVersion": "0.7.2.2385"
+            "assemblyVersion": "0.7.2.2388",
+            "fileVersion": "0.7.2.2388"
           }
         }
       },
-      "MelonLoader/0.7.2.2385": {
+      "MelonLoader/0.7.2.2388": {
         "runtime": {
           "MelonLoader.dll": {
-            "assemblyVersion": "0.7.2.2385",
-            "fileVersion": "0.7.2.2385"
+            "assemblyVersion": "0.7.2.2388",
+            "fileVersion": "0.7.2.2388"
           }
         }
       },
@@ -128,6 +128,14 @@
           }
         }
       },
+      "Iced/1.21.0.0": {
+        "runtime": {
+          "Iced.dll": {
+            "assemblyVersion": "1.21.0.0",
+            "fileVersion": "1.21.0.0"
+          }
+        }
+      },
       "Il2CppInterop.Runtime/1.5.1.0": {
         "runtime": {
           "Il2CppInterop.Runtime.dll": {
@@ -184,19 +192,19 @@
           }
         }
       },
-      "WebSocketDotNet/1.0.0.0": {
-        "runtime": {
-          "WebSocketDotNet.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
-        }
-      },
       "Il2CppInterop.Common/1.5.1.0": {
         "runtime": {
           "Il2CppInterop.Common.dll": {
             "assemblyVersion": "1.5.1.0",
             "fileVersion": "1.5.1.0"
+          }
+        }
+      },
+      "WebSocketDotNet/1.0.0.0": {
+        "runtime": {
+          "WebSocketDotNet.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
           }
         }
       },
@@ -219,7 +227,7 @@
     }
   },
   "libraries": {
-    "MelonLoader.NativeHost/0.7.2.2385": {
+    "MelonLoader.NativeHost/0.7.2.2388": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -229,7 +237,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "MelonLoader/0.7.2.2385": {
+    "MelonLoader/0.7.2.2388": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
@@ -294,6 +302,11 @@
       "serviceable": false,
       "sha512": ""
     },
+    "Iced/1.21.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
     "Il2CppInterop.Runtime/1.5.1.0": {
       "type": "reference",
       "serviceable": false,
@@ -329,12 +342,12 @@
       "serviceable": false,
       "sha512": ""
     },
-    "WebSocketDotNet/1.0.0.0": {
+    "Il2CppInterop.Common/1.5.1.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "Il2CppInterop.Common/1.5.1.0": {
+    "WebSocketDotNet/1.0.0.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""

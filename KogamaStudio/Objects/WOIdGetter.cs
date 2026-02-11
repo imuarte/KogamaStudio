@@ -1,26 +1,31 @@
-﻿//using System;
-//using HarmonyLib;
-//using Il2Cpp;
-//using MelonLoader;
+﻿using System;
+using HarmonyLib;
+using Il2Cpp;
+using KogamaModFramework.Operations;
+using KogamaStudio.Tools.Properties;
+using MelonLoader;
 
-//namespace KogamaStudio.Objects
-//{
-//    [HarmonyPatch]
-//    internal class WOIdGetter
-//    {
-//        public static int? LastSelectedWOId;
-//        public static bool Enabled = false;
+namespace KogamaStudio.Objects
+{
+    [HarmonyPatch]
+    internal class WOIdGetter
+    {
+        public static int? LastSelectedWOId;
 
+        [HarmonyPatch(typeof(SelectionController), "Select",
+    new Type[] { typeof(VoxelHit), typeof(bool), typeof(bool) })]
+        [HarmonyPostfix]
+        internal static void SelectPostfix(WorldObjectClientRef __result)
+        {
+            if (__result == null) return;
 
-//        [HarmonyPatch(typeof(SelectionController), "SelectWO",
-//    new Type[] { typeof(int), typeof(bool), typeof(bool) })]
-//        [HarmonyPrefix]
-//        static bool SelectPrefix(int id, bool addToSelection, bool showVisuals)
-//        {
-//            TextCommand.NotifyUser($"selected woid: {id}");
-//            MelonLogger.Msg($"selected woid: {id}");
-//            LastSelectedWOId = id;
-//            return false;
-//        }
-//    }
-//}
+            LastSelectedWOId = __result.woId;
+            var wo = WorldObjectOperations.GetObject(LastSelectedWOId.Value);
+            if (wo == null) return;
+
+            CommandHandler.currentEulerAngles = wo.Rotation.eulerAngles;
+
+            PropertiesManager.SendProperties(LastSelectedWOId.Value);
+        }
+    }
+}

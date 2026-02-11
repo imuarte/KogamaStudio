@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v6.0": {},
     ".NETCoreApp,Version=v6.0/win-x64": {
-      "UnityEngine.Il2CppAssetBundleManager/0.7.2.2385": {
+      "UnityEngine.Il2CppAssetBundleManager/0.7.2.2388": {
         "runtime": {
           "UnityEngine.Il2CppAssetBundleManager.dll": {}
         }
@@ -15,7 +15,7 @@
     }
   },
   "libraries": {
-    "UnityEngine.Il2CppAssetBundleManager/0.7.2.2385": {
+    "UnityEngine.Il2CppAssetBundleManager/0.7.2.2388": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
