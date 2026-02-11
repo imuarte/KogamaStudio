@@ -1,15 +1,6 @@
 # KogamaStudio
 
-A mod for KoGaMa with resource pack loader and game tools.
-
-## Features
-
-- 📦 **Custom Resource Packs** - Load and manage your own textures
-- 🔧 **Game Tools**
-  - No Build Limit
-  - Single Side Painting
-  - Custom Model Scale
-  - Unlimited Config
+A mod for KoGaMa that adds useful features to build mode.
   
 ![Example](images/menu.png)
 
@@ -31,8 +22,7 @@ A mod for KoGaMa with resource pack loader and game tools.
 Copy these 4 files to your Mods folder:
 - `KogamaStudio.dll`
 - `KogamaStudio-ImGui-Hook.dll`
-- `MVCommon.dll`
-- `MVWorldObject.dll`
+- `KogamaModFramework.dll`
 
 **For KogamaLauncher-WWW:**
 ```
@@ -74,6 +64,7 @@ Launch the game and press **F2** to open the menu.
 
 - Memory leak when reloading textures
 - Occasional crashes (MelonLoader compatibility)
+- False positives
 
 ## Credits
 
