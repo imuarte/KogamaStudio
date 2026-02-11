@@ -19,6 +19,8 @@ internal class ModelProperties
 
     internal static MVCubeModelBase GetModelFromWorldObject(MVWorldObjectClient mVWorldObjectClient)
     {
+        if (mVWorldObjectClient == null) return null;
+
         MVCubeModelBase result = null;
 
         try

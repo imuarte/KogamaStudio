@@ -12,14 +12,11 @@ namespace KogamaStudio.Objects
     {
         public static int? LastSelectedWOId;
 
-        [HarmonyPatch(typeof(SelectionController), "Select",
-    new Type[] { typeof(VoxelHit), typeof(bool), typeof(bool) })]
+        [HarmonyPatch(typeof(SelectionController), "SelectWO")]
         [HarmonyPostfix]
-        internal static void SelectPostfix(WorldObjectClientRef __result)
+        internal static void SelectWOPostfix(int id)
         {
-            if (__result == null) return;
-
-            LastSelectedWOId = __result.woId;
+            LastSelectedWOId = id;
             var wo = WorldObjectOperations.GetObject(LastSelectedWOId.Value);
             if (wo == null) return;
 

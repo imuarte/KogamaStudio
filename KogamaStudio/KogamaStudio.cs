@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Windows;
 
-[assembly: MelonInfo(typeof(KogamaStudio.KogamaStudio), "KogamaStudio", "0.4.0", "Amuarte")]
+[assembly: MelonInfo(typeof(KogamaStudio.KogamaStudio), "KogamaStudio", "0.4.1", "Amuarte")]
 [assembly: MelonGame("Multiverse ApS", "KoGaMa")]
 
 namespace KogamaStudio
@@ -47,7 +47,7 @@ namespace KogamaStudio
 
                     gameInitialized = true;
                     PipeClient.SendCommand("game_initialized");
-                    TextCommand.NotifyUser("<b>KogamaStudio</b> v0.4.0 loaded!\nPress <b>F2</b> to open menu.");
+                    TextCommand.NotifyUser("<b>KogamaStudio</b> v0.4.1 loaded!\nPress <b>F2</b> to open menu.");
 
                 }
             }
