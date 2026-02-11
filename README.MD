@@ -11,7 +11,7 @@ A mod for KoGaMa with resource pack loader and game tools.
   - Custom Model Scale
   - Unlimited Config
   
-![Example](images/example.png)
+![Example](images/menu.png)
 
 ## Installation
 
