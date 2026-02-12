@@ -157,6 +157,7 @@
     <ClCompile Include="mousehooks.cpp" />
     <ClCompile Include="pipe.cpp" />
     <ClCompile Include="Properties.cpp" />
+    <ClCompile Include="Recovery.cpp" />
     <ClCompile Include="ResourcePackLoader.cpp" />
     <ClCompile Include="ResourcePackLoader.h" />
     <ClCompile Include="ResourcePacks.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="namespaces.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="Properties.h" />
+    <ClInclude Include="Recovery.h" />
     <ClInclude Include="ResourcePacks.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Tools.h" />

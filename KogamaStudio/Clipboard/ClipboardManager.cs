@@ -59,7 +59,7 @@ internal class ClipboardManager
 
     internal static void ShowPreview()
     {
-        if (Clipboard == null)
+        if (Clipboard == null || ModelProperties.CubeModelBase == null)
             return;
 
         if (BackupCubes == null)

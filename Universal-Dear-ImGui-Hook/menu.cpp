@@ -13,6 +13,7 @@
 #include "Properties.h"
 #include "Clipboard.h"
 #include "Appearance.h"
+#include "Recovery.h"
 
 namespace menu {
     bool isOpen = false;
@@ -138,5 +139,7 @@ namespace menu {
         if (Windows::propertiesOpen) Properties::Render();
         if (Windows::clipboardOpen) Clipboard::Render();
         if (Windows::appearanceOpen) Appearance::Render();
+
+        Recovery::Render();
     }
 }

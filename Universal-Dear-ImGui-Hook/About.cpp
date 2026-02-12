@@ -2,7 +2,7 @@
 
 namespace About {
 	void Render() {
-        ImGui::Text("KogamaStudio v0.4.1");
+        ImGui::Text("KogamaStudio v0.4.2");
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();

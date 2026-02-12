@@ -5,6 +5,7 @@
 #include "pipe.h"
 #include "Properties.h"
 #include "Clipboard.h"
+#include "Recovery.h"
 
 
 namespace pipe {
@@ -101,6 +102,10 @@ namespace pipe {
             {
                 Properties::isPrevievPaste = false;
             }
+        }
+        else if (command == "recovery_mode")
+        {
+            Recovery::recoveryOpen = true;
         }
     }
 

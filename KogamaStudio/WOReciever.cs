@@ -26,11 +26,4 @@ internal static class WOReciever
             OnWORecieved.Invoke(root, instigatorActorNumber);
         }
     }
-
-    [HarmonyPatch(typeof(MVWorldObjectClientManagerNetwork), "AddWorldObject")]
-    [HarmonyPostfix]
-    private static void AddWorldObjectPostfix()
-    {
-        MelonLogger.Msg("test");
-    }
 }

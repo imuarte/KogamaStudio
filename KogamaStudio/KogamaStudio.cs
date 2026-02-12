@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Windows;
 
-[assembly: MelonInfo(typeof(KogamaStudio.KogamaStudio), "KogamaStudio", "0.4.1", "Amuarte")]
+[assembly: MelonInfo(typeof(KogamaStudio.KogamaStudio), "KogamaStudio", "0.4.2", "Amuarte")]
 [assembly: MelonGame("Multiverse ApS", "KoGaMa")]
 
 namespace KogamaStudio
@@ -47,7 +47,7 @@ namespace KogamaStudio
 
                     gameInitialized = true;
                     PipeClient.SendCommand("game_initialized");
-                    TextCommand.NotifyUser("<b>KogamaStudio</b> v0.4.1 loaded!\nPress <b>F2</b> to open menu.");
+                    TextCommand.NotifyUser("<b>KogamaStudio</b> v0.4.2 loaded!\nPress <b>F2</b> to open menu.");
 
                 }
             }
@@ -56,6 +56,12 @@ namespace KogamaStudio
             {
                 PipeClient.SendCommand("key_down|F2");
             }
+
+            // recovery mode
+            //if (UnityEngine.Input.GetKeyDown(KeyCode.F8))
+            //{
+            //    RecoveryMode.EnableRecoveryMode();
+            //}
 
             if (AddLinePatch.TranslateTextCubesEnabled)
             {
@@ -69,14 +75,6 @@ namespace KogamaStudio
                     AddLinePatch.SendMessageControlInstance.SendChatMessage(MessageTranslator.Instance.LastTranslation);
                 }
                 AddLinePatch.CurrentTranslationMode = AddLinePatch.MessageTranslationType.None;
-            }
-
-            if (UnityEngine.Input.GetKeyDown(KeyCode.F3))
-            {
-                if (Freecam.IsEnabled)
-                    Freecam.Disable();
-                else
-                    Freecam.Enable();
             }
         }
     }

@@ -126,6 +126,9 @@
     <ClCompile Include="Appearance.cpp">
       <Filter>Sources Files\menu</Filter>
     </ClCompile>
+    <ClCompile Include="Recovery.cpp">
+      <Filter>Sources Files\menu</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -204,6 +207,9 @@
       <Filter>Sources Files\menu</Filter>
     </ClInclude>
     <ClInclude Include="Appearance.h">
+      <Filter>Sources Files\menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Recovery.h">
       <Filter>Sources Files\menu</Filter>
     </ClInclude>
   </ItemGroup>

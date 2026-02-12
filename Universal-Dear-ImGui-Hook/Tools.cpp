@@ -133,13 +133,13 @@ namespace Tools {
 
         if (CustomModelScaleEnabled) {
             ImGui::PushItemWidth(100);
-            ImGui::InputFloat("Scale", &CustomModelScaleValue);
+            ImGui::InputFloat("Scale", &CustomModelScaleValue, 0.0f, 0.0f, "%.6g");
             ImGui::PopItemWidth();
-
             if (!typing) typing = ImGui::IsItemActive();
-
             if (ImGui::IsItemEdited()) {
-                SendCommand(("option_custom_model_scale_value|" + std::to_string(CustomModelScaleValue)).c_str());
+                char buffer[32];
+                snprintf(buffer, sizeof(buffer), "%.15g", CustomModelScaleValue);
+                SendCommand(("option_custom_model_scale_value|" + std::string(buffer)).c_str());
             }
         }
       

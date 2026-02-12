@@ -20,6 +20,7 @@ using Il2CppMV.WorldObject;
 using KogamaStudio.Tools.Build;
 using KogamaStudio.Tools.Properties;
 using KogamaStudio.Clipboard;
+using KogamaStudio.Inventory;
 
 
 namespace KogamaStudio;
@@ -412,6 +413,15 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     Clipboard.ClipboardManager.Preview = param == "true";
                     Clipboard.ClipboardManager.ShowPreview();
                     Clipboard.ClipboardManager.Preview = param == "true";
+                    break;
+                case "recovery_disable_loading_screen":
+                    RecoveryMode.DisableLoadingScreen();
+                    break;
+                case "recovery_target_item_id":
+                    RecoveryMode.TargetItemId = int.Parse(param);
+                    break;
+                case "recovery_remove_item":
+                    InventoryManager.RemoveItem(RecoveryMode.TargetItemId);
                     break;
 
                 default:
