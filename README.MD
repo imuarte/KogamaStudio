@@ -60,6 +60,14 @@ Launch the game and press **F2** to open the menu.
 - **F2** - Toggle menu
 - Select tools in the menu
 
+## Troubleshooting
+
+### UI not appearing
+If the mod loads but the menu doesn't show, your antivirus is likely blocking the **Direct3D 11** hook that renders the interface. Add KogamaStudio-ImGui-Hook.dll to your antivirus whitelist or temporarily disable it.
+
+### Fog on project
+The fog effect is a safety feature—MelonLoader has compatibility issues with KoGaMa, so fog prevents crashes in restricted areas. It will reduce when you enter the Shop.
+
 ## Known Issues
 
 - Memory leak when reloading textures
