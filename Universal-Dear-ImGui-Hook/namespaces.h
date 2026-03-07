@@ -29,6 +29,9 @@ namespace hooks {
 namespace inputhook {
         extern void Init(HWND hWindow);
         extern void Remove(HWND hWindow);
+        extern void InitGetCursorPosHook();
+        extern void RemoveGetCursorPosHook();
+        extern bool remapCursor;
         static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 }
 
@@ -139,6 +142,8 @@ namespace hooks_dx11 {
     void Init();
     void release();
     bool IsInitialized();
+    ID3D11ShaderResourceView* GetGameFrameSRV();
+    void GetGameFrameSize(UINT& width, UINT& height);
 }
 
 namespace hooks_vk {
@@ -163,6 +168,10 @@ namespace hooks_vk {
 
 namespace menu {
         extern bool isOpen;
+        extern bool viewportHovered;
+        extern ImVec2 viewportImageMin;
+        extern ImVec2 viewportImageMax;
+        extern float menuBarHeight;
         extern void Init();
         void SendCommand(const char* cmd);
 }

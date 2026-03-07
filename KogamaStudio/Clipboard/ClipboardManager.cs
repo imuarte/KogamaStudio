@@ -57,47 +57,9 @@ internal class ClipboardManager
         Clipboard = KogamaModFramework.Operations.CubeOperations.GetAllCubes(ModelProperties.CubeModelBase);
     }
 
-    internal static void ShowPreview()
+    internal static List<CubeData> GetTransformedCubes()
     {
-        if (Clipboard == null || ModelProperties.CubeModelBase == null)
-            return;
-
-        if (BackupCubes == null)
-            BackupCubes = new List<CubeData>();
-
-        List<IntVector> cubePositions;
-
-        if (PreviewedObjectId == -1)
-        {
-            CurrentCubeData = KogamaModFramework.Operations.CubeOperations.GetAllCubes(ModelProperties.CubeModelBase);
-            PreviewedObjectId = ModelProperties.CubeModelBase.Id;
-        }
-        if (PreviewedObjectId != ModelProperties.CubeModelBase.Id)
-        {
-            Preview = false;
-            CurrentCubeData = KogamaModFramework.Operations.CubeOperations.GetAllCubes(ModelProperties.CubeModelBase);
-            PreviewedObjectId = ModelProperties.CubeModelBase.Id;
-
-            cubePositions = BackupCubes.Select(c => new IntVector { x = (short)c.X, y = (short)c.Y, z = (short)c.Z }).ToList();
-            KogamaModFramework.Operations.CubeOperations.PrevievRemove(ModelProperties.CubeModelBase, cubePositions);
-            KogamaModFramework.Operations.CubeOperations.PrevievAdd(ModelProperties.CubeModelBase, CurrentCubeData);
-            BackupCubes.Clear();
-        }
-
-        if (BackupCubes != null)
-        {
-            cubePositions = BackupCubes.Select(c => new IntVector { x = (short)c.X, y = (short)c.Y, z = (short)c.Z }).ToList();
-            KogamaModFramework.Operations.CubeOperations.PrevievRemove(ModelProperties.CubeModelBase, cubePositions);
-            KogamaModFramework.Operations.CubeOperations.PrevievAdd(ModelProperties.CubeModelBase, CurrentCubeData);
-            BackupCubes.Clear();
-        }
-
-
-        if (!Preview)
-        {
-            return;
-        }
-
+        if (Clipboard == null) return null;
         var edited = new List<CubeData>(Clipboard);
         if (ClipMinX != 0 || ClipMaxX != 0) edited = Clip(edited, 'x', ClipMinX, ClipMaxX);
         if (ClipMinY != 0 || ClipMaxY != 0) edited = Clip(edited, 'y', ClipMinY, ClipMaxY);
@@ -109,10 +71,12 @@ internal class ClipboardManager
         if (MirrorY) edited = Mirror(edited, 'y');
         if (MirrorZ) edited = Mirror(edited, 'z');
         if (OffsetX != 0 || OffsetY != 0 || OffsetZ != 0) edited = Offset(edited, OffsetX, OffsetY, OffsetZ);
+        return edited;
+    }
 
-        BackupCubes = edited;
-
-        KogamaModFramework.Operations.CubeOperations.PrevievAdd(ModelProperties.CubeModelBase, edited);
+    internal static void ShowPreview()
+    {
+        Preview = Clipboard != null;
     }
 
     internal static void PasteEditedModel()
@@ -159,7 +123,6 @@ internal class ClipboardManager
         var result = new List<CubeData>();
         int rot = (rotations / 90) % 4;
         if (rot == 0) return cubes;
-
         int[] perm = axis switch
         {
             'x' => new[] { 7, 6, 1, 0, 3, 2, 5, 4 },
@@ -167,13 +130,11 @@ internal class ClipboardManager
             'z' => new[] { 1, 6, 5, 2, 3, 4, 7, 0 },
             _ => new[] { 0, 1, 2, 3, 4, 5, 6, 7 }
         };
-
         foreach (var cube in cubes)
         {
             int newX = cube.X, newY = cube.Y, newZ = cube.Z;
             var corners = (byte[])cube.Corners.Clone();
             var mats = (byte[])cube.Materials.Clone();
-
             for (int r = 0; r < rot; r++)
             {
                 if (axis == 'x')
@@ -188,33 +149,31 @@ internal class ClipboardManager
                 {
                     byte val = corners[i];
                     int x = val % 5, y = (val / 5) % 5, z = (val / 25) % 5;
-
                     if (axis == 'x')
-                        (y, z) = (z, 4 - y);
+                        (x, y) = (y, 4 - x);
                     else if (axis == 'y')
                         (x, z) = (4 - z, x);
                     else if (axis == 'z')
-                        (x, y) = (y, 4 - x);
-
+                        (y, z) = (z, 4 - y);
                     transformed[i] = (byte)(x + y * 5 + z * 25);
                 }
-
                 var permuted = new byte[8];
                 for (int i = 0; i < 8; i++)
                     permuted[i] = transformed[perm[i]];
                 corners = permuted;
 
                 if (axis == 'x')
-                    (mats[1], mats[2], mats[4], mats[5]) = (mats[4], mats[1], mats[5], mats[2]);
+                    (mats[1], mats[2], mats[4], mats[5]) =
+                        (mats[5], mats[1], mats[2], mats[4]);
                 else if (axis == 'y')
-                    (mats[0], mats[2], mats[3], mats[5]) = (mats[2], mats[3], mats[5], mats[0]);
+                    (mats[0], mats[2], mats[3], mats[5]) =
+                        (mats[2], mats[3], mats[5], mats[0]);
                 else if (axis == 'z')
-                    (mats[0], mats[1], mats[3], mats[4]) = (mats[1], mats[3], mats[4], mats[0]);
+                    (mats[0], mats[1], mats[3], mats[4]) =
+                        (mats[4], mats[0], mats[1], mats[3]);
             }
-
             result.Add(new CubeData(newX, newY, newZ, mats, corners));
         }
-
         return result;
     }
 

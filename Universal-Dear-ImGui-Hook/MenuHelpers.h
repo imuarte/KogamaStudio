@@ -8,6 +8,7 @@ namespace menu
 	void OpenFolder(std::string subpath);
 	void SendCommand(const char* cmd);
 	void DisplayDirTree(const std::string& path, const std::string& rel = "");
-	void FloatInput(const char* label, float& value, const char* commandPrefix, bool& typing, float width = 100.0f);
+	void FloatInput(const char* label, float& value, const char* commandPrefix, bool& typing, float width = 100.0f, const char* format = "%.3f");
+	void DragFloatInput(const char* label, float& value, const char* commandPrefix, bool& typing, float speed = 0.1f, float width = 100.0f, const char* format = "%.3f");
 	void IntInput(const char* label, int& value, const char* commandPrefix, bool& typing, float width = 100.0f);
 }

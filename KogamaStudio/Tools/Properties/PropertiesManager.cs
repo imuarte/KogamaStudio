@@ -19,13 +19,6 @@ internal class PropertiesManager
         var wo = MVGameControllerBase.WOCM.GetWorldObjectClient(WOId);
         if (wo == null) return;
 
-        if (SelectedWOId != WOId)
-        {
-            ClipboardManager.Preview = false;
-            ClipboardManager.ShowPreview();
-            PipeClient.SendCommand("clipboard_preview_paste_model|false");
-        }
-
         SelectedWOId = WOId;
 
         Vector3 euler = wo.Rotation.eulerAngles;

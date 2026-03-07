@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "MenuHelpers.h"
 #include "pipe.h"
+#include "Console.h"
 #include <cstdlib>
 
 namespace menu {
@@ -18,6 +19,7 @@ namespace menu {
             WriteFile(hPipe, cmd, strlen(cmd), &written, NULL);
             CloseHandle(hPipe);
             DebugLog("[menu] Command sent: %s\n", cmd);
+            AppLog::AddLog(AppLog::LogType::Outgoing, cmd);
         }
         else {
             DebugLog("[menu] Pipe not connected\n");
@@ -61,14 +63,26 @@ namespace menu {
         FindClose(h);
     }
 
-    void FloatInput(const char* label, float& value, const char* commandPrefix, bool& typing, float width) {
+    void FloatInput(const char* label, float& value, const char* commandPrefix, bool& typing, float width, const char* format) {
         ImGui::PushItemWidth(width);
-        ImGui::InputFloat(label, &value);
+        ImGui::InputFloat(label, &value, 0.0f, 0.0f, format);
         ImGui::PopItemWidth();
 
         if (!typing) typing = ImGui::IsItemActive();
 
         if (ImGui::IsItemDeactivatedAfterEdit()) {
+            SendCommand((std::string(commandPrefix) + "|" + std::to_string(value)).c_str());
+        }
+    }
+
+    void DragFloatInput(const char* label, float& value, const char* commandPrefix, bool& typing, float speed, float width, const char* format) {
+        ImGui::PushItemWidth(width);
+        ImGui::DragFloat(label, &value, speed, 0.0f, 0.0f, format);
+        ImGui::PopItemWidth();
+
+        if (!typing) typing = ImGui::IsItemActive();
+
+        if (ImGui::IsItemEdited()) {
             SendCommand((std::string(commandPrefix) + "|" + std::to_string(value)).c_str());
         }
     }

@@ -2,25 +2,30 @@
 using Il2Cpp;
 using Il2CppAssets.Scripts.WorldObjectTypes.MVTextMsg;
 using Il2CppBorodar.FarlandSkies.CloudyCrownPro.DotParams;
+using Il2CppExitGames.Client.Photon;
 using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.Runtime;
+using Il2CppMV.WorldObject;
 using Il2CppSystem.Collections.Generic;
 using Il2CppSystem.Runtime.InteropServices;
+using KogamaModFramework.Data;
 using KogamaModFramework.Operations;
+using KogamaStudio.Camera;
+using KogamaStudio.Explorer;
+using KogamaStudio.Clipboard;
 using KogamaStudio.Generating.Models;
+using KogamaStudio.Inventory;
 using KogamaStudio.Objects;
 using KogamaStudio.ResourcePacks.Materials;
+using KogamaStudio.Tools.Build;
+using KogamaStudio.Tools.Properties;
 using KogamaStudio.Translator;
 using MelonLoader;
 using Newtonsoft.Json;
+using System.Drawing;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using UnityEngine;
-using KogamaModFramework.Data;
-using Il2CppMV.WorldObject;
-using KogamaStudio.Tools.Build;
-using KogamaStudio.Tools.Properties;
-using KogamaStudio.Clipboard;
-using KogamaStudio.Inventory;
 
 
 namespace KogamaStudio;
@@ -170,6 +175,12 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                 case "option_anti_afk":
                     AntiAFK.Enabled = param == "true";
                     break;
+                case "option_destructibles_unlock":
+                    DestructiblesUnlock.Unlocked = param == "true";
+                    break;
+                case "option_blue_mode":
+                    BlueModeToggle.BlueModeEnabled = param == "true";
+                    break;
                 // GRID SIZE
                 case "option_custom_grid_size_enabled":
                     CustomGrid.Enabled = param == "true";
@@ -240,39 +251,25 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     HandleRemove(targetWoId);
                     break;
                 case "objects_visible":
-                    break; 
-                case "test":
-
-                    var modelCube = CubeOperations.GetCube(ModelProperties.CubeModelBase, new IntVector(0, 0, 0));
-                    var cornersBytes = modelCube.Corners;
-                    byte[] newCorners = modelCube.Corners;
-
-                    //var corners = ClipboardManager.CornerBytesToCoords(cornersBytes);
-
-                    //int index = 0;
-                    //foreach ((int x, int y, int z) corner in corners)
-                    //{
-                    //    TextCommand.NotifyUser($"{index}. {corner.x}, {corner.y}, {corner.z}");
-                    //    index++;
-                    //}
-
-                    newCorners[0] = cornersBytes[7];
-                    newCorners[1] = cornersBytes[6];
-                    newCorners[2] = cornersBytes[1];
-                    newCorners[3] = cornersBytes[0];
-                    newCorners[4] = cornersBytes[3];
-                    newCorners[5] = cornersBytes[2];
-                    newCorners[6] = cornersBytes[5];
-                    newCorners[7] = cornersBytes[4];
-
-                    modelCube.Corners = newCorners;
-
-                    System.Collections.Generic.List<CubeData> modelCubes = new System.Collections.Generic.List<CubeData>();
-                    modelCubes.Add(modelCube);
-
-
-                    MelonCoroutines.Start(KogamaModFramework.Operations.CubeOperations.Add(ModelProperties.CubeModelBase, modelCubes));
-
+                    break;
+                case "explorer_refresh":
+                    ExplorerManager.Refresh();
+                    break;
+                case "explorer_select":
+                    targetWoId = int.Parse(param);
+                    PropertiesManager.SendProperties(targetWoId);
+                    break;
+                case "camera_freecam_enable":
+                    Freecam.Enable();
+                    break;
+                case "camera_freecam_disable":
+                    Freecam.Disable();
+                    break;
+                case "camera_freecam_speed":
+                    Freecam.Speed = float.Parse(param);
+                    break;
+                case "camera_freecam_sensitivity":
+                    Freecam.Sensitivity = float.Parse(param);
                     break;
                 // TRANSLATOR
                 // translate own messages
@@ -422,6 +419,39 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 case "recovery_remove_item":
                     InventoryManager.RemoveItem(RecoveryMode.TargetItemId);
+                    break;
+                case "teleport_player":
+                    var playerWo = WorldObjectOperations.GetObject(int.Parse(param));
+                    var localPlayerWo = WorldObjectOperations.GetObject(MVGameControllerBase.LocalPlayer.WoId);
+
+                    if (playerWo != null && localPlayerWo != null)
+                        localPlayerWo.Position = playerWo.Position;
+
+                    break;
+                case "camera_fov":
+                    FovModifier.Enabled = true;
+                    FovModifier.Fov = float.Parse(param);
+                    break;
+                case "camera_fov_reset":
+                    FovModifier.Enabled = false;
+                    break;
+                case "set_resolution":
+                {
+                    var dims = param.Split('x');
+                    if (dims.Length == 2 && int.TryParse(dims[0], out int rW) && int.TryParse(dims[1], out int rH))
+                        Screen.SetResolution(rW, rH, false);
+                    break;
+                }
+                case "set_resolution_reset":
+                    Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, false);
+                    break;
+                case "camera_distance":
+                    CameraDistanceModifier.distance = float.Parse(param);
+                    CameraDistanceModifier.ApplyChanges();
+                    break;
+                case "camera_distance_reset":
+                    CameraDistanceModifier.distance = CameraDistanceModifier.defaultDistance;
+                    CameraDistanceModifier.ApplyChanges();
                     break;
 
                 default:

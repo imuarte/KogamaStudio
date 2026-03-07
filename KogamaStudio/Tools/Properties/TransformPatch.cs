@@ -13,10 +13,17 @@ namespace KogamaStudio.Tools.Properties;
 [HarmonyPatch]
 internal class TransformPatch
 {
+    internal static MVNetworkGame SavedNetworkGame;
+    internal static int SavedWorldObjectID;
+    internal static int SavedOwnerActorNr;
+
     [HarmonyPatch(typeof(MVNetworkGame.OperationRequests), "TransferOwnership")]
     [HarmonyPrefix]
-    internal static void TransferOwnershipPrefix(int worldObjectID, int ownerActorNr, Transform t)
+    internal static void TransferOwnershipPrefix(MVNetworkGame __instance, int worldObjectID, int ownerActorNr, Transform t)
     {
         PropertiesManager.SendProperties(worldObjectID);
+        SavedNetworkGame = __instance;
+        SavedWorldObjectID = worldObjectID;
+        SavedOwnerActorNr = ownerActorNr;
     }
 }

@@ -6,6 +6,9 @@
 #include "Properties.h"
 #include "Clipboard.h"
 #include "Recovery.h"
+#include "Console.h"
+#include "Players.h"
+#include "Explorer.h"
 
 
 namespace pipe {
@@ -107,6 +110,26 @@ namespace pipe {
         {
             Recovery::recoveryOpen = true;
         }
+        else if (command == "console_log")
+        {
+            AppLog::AddLog(AppLog::LogType::Incoming, param.c_str());
+        }
+        else if (command == "console_warning")
+        {
+            AppLog::AddLog(AppLog::LogType::Warning, param.c_str());
+        }
+        else if (command == "console_error")
+        {
+            AppLog::AddLog(AppLog::LogType::Error, param.c_str());
+        }
+        else if (command == "players_list")
+        {
+            Players::SetPlayers(param);
+        }
+        else if (command == "explorer_ready")
+        {
+            Explorer::LoadFromFile();
+        }
     }
 
     void ListenForCommands()
@@ -123,7 +146,7 @@ namespace pipe {
                 if (hPipe == INVALID_HANDLE_VALUE) continue;
 
                 if (ConnectNamedPipe(hPipe, NULL) || GetLastError() == ERROR_PIPE_CONNECTED) {
-                    char buffer[256] = { 0 };
+                    char buffer[65536] = { 0 };
                     DWORD bytesRead = 0;
 
                     if (ReadFile(hPipe, buffer, sizeof(buffer) - 1, &bytesRead, NULL))

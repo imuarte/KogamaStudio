@@ -17,6 +17,42 @@ namespace hooks_dx11 {
     static IDXGISwapChain* gSwapChain = nullptr;
     static ID3D11RenderTargetView* gRTV = nullptr;
     static bool                     gInitialized = false;
+    static ID3D11Texture2D*          gGameFrameTexture = nullptr;
+    static ID3D11ShaderResourceView* gGameFrameSRV = nullptr;
+
+    static DXGI_FORMAT StripSRGB(DXGI_FORMAT fmt)
+    {
+        if (fmt == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) return DXGI_FORMAT_R8G8B8A8_UNORM;
+        if (fmt == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB)  return DXGI_FORMAT_B8G8R8A8_UNORM;
+        return fmt;
+    }
+
+    static void CreateGameFrameTexture()
+    {
+        ID3D11Texture2D* pBB = nullptr;
+        if (!gSwapChain || FAILED(gSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBB)))) return;
+        D3D11_TEXTURE2D_DESC bbDesc;
+        pBB->GetDesc(&bbDesc);
+        pBB->Release();
+        D3D11_TEXTURE2D_DESC td = bbDesc;
+        td.BindFlags          = D3D11_BIND_SHADER_RESOURCE;
+        td.Usage              = D3D11_USAGE_DEFAULT;
+        td.MiscFlags          = 0;
+        td.SampleDesc.Count   = 1;
+        td.SampleDesc.Quality = 0;
+        if (FAILED(gDevice->CreateTexture2D(&td, nullptr, &gGameFrameTexture))) return;
+        D3D11_SHADER_RESOURCE_VIEW_DESC srvd = {};
+        srvd.Format              = td.Format;
+        srvd.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
+        srvd.Texture2D.MipLevels = 1;
+        gDevice->CreateShaderResourceView(gGameFrameTexture, &srvd, &gGameFrameSRV);
+    }
+
+    static void CleanupGameFrameTexture()
+    {
+        if (gGameFrameSRV)     { gGameFrameSRV->Release();     gGameFrameSRV = nullptr; }
+        if (gGameFrameTexture) { gGameFrameTexture->Release(); gGameFrameTexture = nullptr; }
+    }
 
     static void CreateRenderTarget()
     {
@@ -80,25 +116,55 @@ namespace hooks_dx11 {
 
 
                 Appearance::LoadSettings();
+                static const ImWchar glyphRanges[] = {
+                    0x0020, 0x00FF, // Basic Latin + Latin-1 Supplement
+                    0x0100, 0x017F, // Latin Extended-A
+                    0x0180, 0x024F, // Latin Extended-B
+                    0x0250, 0x02AF, // IPA Extensions
+                    0x02B0, 0x02FF, // Spacing Modifier Letters (˚)
+                    0x0300, 0x036F, // Combining Diacritical Marks
+                    0x0370, 0x03FF, // Greek and Coptic
+                    0x0400, 0x04FF, // Cyrillic
+                    0x0500, 0x052F, // Cyrillic Supplement
+                    0x1E00, 0x1EFF, // Latin Extended Additional
+                    0x2000, 0x206F, // General Punctuation
+                    0x20A0, 0x20CF, // Currency Symbols
+                    0x2100, 0x214F, // Letterlike Symbols
+                    0x2190, 0x21FF, // Arrows
+                    0x2200, 0x22FF, // Mathematical Operators (∘)
+                    0x25A0, 0x25FF, // Geometric Shapes
+                    0x2600, 0x26FF, // Miscellaneous Symbols
+                    0,
+                };
                 bool fontLoaded = false;
                 if (!Appearance::fontPath.empty() && Appearance::fontSize > 0) {
                     FILE* f = nullptr;
                     if (fopen_s(&f, Appearance::fontPath.c_str(), "rb") == 0 && f != nullptr) {
                         fclose(f);
-                        fontLoaded = (io.Fonts->AddFontFromFileTTF(Appearance::fontPath.c_str(), Appearance::fontSize) != nullptr);
+                        fontLoaded = (io.Fonts->AddFontFromFileTTF(Appearance::fontPath.c_str(), Appearance::fontSize, nullptr, glyphRanges) != nullptr);
                     }
                 }
                 if (!fontLoaded) {
-                    io.Fonts->AddFontDefault();
+                    fontLoaded = (io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\consola.ttf", 13.0f, nullptr, glyphRanges) != nullptr);
+                }
+                if (!fontLoaded) {
+                    io.Fonts->AddFontDefaultVector();
                 }
                 io.Fonts->Build();
 
                 io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+                io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+                io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
                 ImGui::StyleColorsDark();
+                ImGuiStyle& style = ImGui::GetStyle();
+                style.WindowRounding = 0.0f;
+                style.Colors[ImGuiCol_WindowBg].w = 1.0f;
                 ImGui_ImplWin32_Init(desc.OutputWindow);
                 ImGui_ImplDX11_Init(gDevice, gContext);
                 inputhook::Init(desc.OutputWindow);
+                inputhook::InitGetCursorPosHook();
                 CreateRenderTarget();
+                CreateGameFrameTexture();
                 gInitialized = true;
                 DebugLog("[d3d11hook] ImGui initialized.\n");
             }
@@ -118,6 +184,37 @@ namespace hooks_dx11 {
 
         if (gInitialized)
         {
+            if (menu::isOpen && pipe::openMenu)
+            {
+                ID3D11Texture2D* pBB = nullptr;
+                if (gSwapChain && SUCCEEDED(gSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBB))))
+                {
+                    if (gGameFrameTexture)
+                    {
+                        D3D11_TEXTURE2D_DESC bbDesc, texDesc;
+                        pBB->GetDesc(&bbDesc);
+                        gGameFrameTexture->GetDesc(&texDesc);
+                        if (bbDesc.Width != texDesc.Width || bbDesc.Height != texDesc.Height)
+                        {
+                            CleanupGameFrameTexture();
+                            CreateGameFrameTexture();
+                        }
+                        if (gGameFrameTexture)
+                        {
+                            if (bbDesc.SampleDesc.Count > 1)
+                                gContext->ResolveSubresource(gGameFrameTexture, 0, pBB, 0, bbDesc.Format);
+                            else
+                                gContext->CopyResource(gGameFrameTexture, pBB);
+                        }
+                    }
+                    pBB->Release();
+                }
+                const float clearColor[4] = { 0.06f, 0.06f, 0.06f, 1.0f };
+                gContext->OMSetRenderTargets(1, &gRTV, nullptr);
+                gContext->ClearRenderTargetView(gRTV, clearColor);
+            }
+
+            inputhook::remapCursor = false;
             ImGui_ImplDX11_NewFrame();
             ImGui_ImplWin32_NewFrame();
             ImGui::NewFrame();
@@ -126,14 +223,7 @@ namespace hooks_dx11 {
             
             menu::Init();
 
-            if (ImGui::IsAnyItemHovered())
-            {
-                io.WantCaptureMouse = true;
-            }
-            else
-            {
-                io.WantCaptureMouse = false;
-            }
+            io.WantCaptureMouse = ImGui::IsAnyItemHovered() && !menu::viewportHovered;
 
 
 
@@ -143,11 +233,17 @@ namespace hooks_dx11 {
             if (gContext)
             {
                 ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+                if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+                {
+                    ImGui::UpdatePlatformWindows();
+                    ImGui::RenderPlatformWindowsDefault();
+                }
             }
             else
             {
                 DebugLog("[d3d11hook] Render skipped: device context invalid\n");
             }
+            inputhook::remapCursor = true;
         }
     }
 
@@ -174,6 +270,7 @@ namespace hooks_dx11 {
         if (gInitialized)
         {
             ImGui_ImplDX11_InvalidateDeviceObjects();
+            CleanupGameFrameTexture();
             CleanupRenderTarget();
         }
 
@@ -183,6 +280,7 @@ namespace hooks_dx11 {
         {
             DebugLog("[d3d11hook] ResizeBuffers: recreating render target\n");
             CreateRenderTarget();
+            CreateGameFrameTexture();
             ImGui_ImplDX11_CreateDeviceObjects();
         }
 
@@ -260,6 +358,7 @@ namespace hooks_dx11 {
     {
         DebugLog("[d3d11hook] Releasing resources\n");
 
+        inputhook::RemoveGetCursorPosHook();
         if (globals::mainWindow)
             inputhook::Remove(globals::mainWindow);
 
@@ -268,6 +367,7 @@ namespace hooks_dx11 {
             ImGui_ImplDX11_Shutdown();
             ImGui_ImplWin32_Shutdown();
             ImGui::DestroyContext();
+            CleanupGameFrameTexture();
             CleanupRenderTarget();
             if (gContext)
             {
@@ -303,5 +403,26 @@ namespace hooks_dx11 {
     bool IsInitialized()
     {
         return gInitialized;
+    }
+
+    ID3D11ShaderResourceView* GetGameFrameSRV()
+    {
+        return gGameFrameSRV;
+    }
+
+    void GetGameFrameSize(UINT& width, UINT& height)
+    {
+        if (gGameFrameTexture)
+        {
+            D3D11_TEXTURE2D_DESC desc;
+            gGameFrameTexture->GetDesc(&desc);
+            width  = desc.Width;
+            height = desc.Height;
+        }
+        else
+        {
+            width  = 0;
+            height = 0;
+        }
     }
 }

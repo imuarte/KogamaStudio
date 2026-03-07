@@ -44,6 +44,7 @@ typedef uint32_t uintx_t;
 #include "minhook/include/MinHook.h"
 
 #include "namespaces.h"
+#include "UILocale.h"
 
 // Helper macro for debug logging via DebugView
 inline void DebugLog(const char* fmt, ...) {

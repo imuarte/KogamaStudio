@@ -91,7 +91,11 @@
 	  <Reference Include="UnityEngine.UI">
       <HintPath>..\..\..\..\AppData\Local\KogamaLauncher-WWW\Launcher\Standalone\MelonLoader\Il2CppAssemblies\UnityEngine.UI.dll</HintPath>
     </Reference>
-    
+
   </ItemGroup>
+
+  <Target Name="GenerateKSVersion" BeforeTargets="BeforeBuild">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$v=(Get-Content '$(MSBuildProjectDirectory)\..\version.txt').Trim(); Set-Content -Path '$(MSBuildProjectDirectory)\KSVersion.cs' -Value ('namespace KogamaStudio { public static class KSVersion { public const string Value = ' + [char]34 + $v + [char]34 + '; } }')&quot;" />
+  </Target>
 
 </Project>

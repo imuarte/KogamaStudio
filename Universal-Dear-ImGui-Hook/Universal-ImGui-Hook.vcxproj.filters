@@ -90,9 +90,6 @@
     <ClCompile Include="vulkanhook.cpp">
       <Filter>Sources Files</Filter>
     </ClCompile>
-    <ClCompile Include="ResourcePackLoader.h">
-      <Filter>Sources Files</Filter>
-    </ClCompile>
     <ClCompile Include="ResourcePackLoader.cpp">
       <Filter>Sources Files</Filter>
     </ClCompile>
@@ -127,6 +124,18 @@
       <Filter>Sources Files\menu</Filter>
     </ClCompile>
     <ClCompile Include="Recovery.cpp">
+      <Filter>Sources Files\menu</Filter>
+    </ClCompile>
+    <ClCompile Include="UILocale.cpp">
+      <Filter>Sources Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Console.cpp">
+      <Filter>Sources Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Players.cpp">
+      <Filter>Sources Files\menu</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
       <Filter>Sources Files\menu</Filter>
     </ClCompile>
   </ItemGroup>
@@ -210,6 +219,21 @@
       <Filter>Sources Files\menu</Filter>
     </ClInclude>
     <ClInclude Include="Recovery.h">
+      <Filter>Sources Files\menu</Filter>
+    </ClInclude>
+    <ClInclude Include="UILocale.h">
+      <Filter>Headers Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Console.h">
+      <Filter>Headers Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourcePackLoader.h">
+      <Filter>Headers Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Headers Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Players.h">
       <Filter>Sources Files\menu</Filter>
     </ClInclude>
   </ItemGroup>
