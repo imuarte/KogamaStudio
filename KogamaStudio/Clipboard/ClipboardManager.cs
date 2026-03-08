@@ -17,49 +17,57 @@ internal class ClipboardManager
     internal static List<CubeData> Clipboard;
     internal static List<CubeData> EditedClipboard;
     private static int _offsetX = 0;
-    internal static int OffsetX { get => _offsetX; set { _offsetX = value; ShowPreview(); } }
+    internal static int OffsetX { get => _offsetX; set { _offsetX = value; InvalidateCache(); } }
     private static int _offsetY = 0;
-    internal static int OffsetY { get => _offsetY; set { _offsetY = value; ShowPreview(); } }
+    internal static int OffsetY { get => _offsetY; set { _offsetY = value; InvalidateCache(); } }
     private static int _offsetZ = 0;
-    internal static int OffsetZ { get => _offsetZ; set { _offsetZ = value; ShowPreview(); } }
+    internal static int OffsetZ { get => _offsetZ; set { _offsetZ = value; InvalidateCache(); } }
     private static int _rotationX = 0;
-    internal static int RotationX { get => _rotationX; set { _rotationX = value; ShowPreview(); } }
+    internal static int RotationX { get => _rotationX; set { _rotationX = value; InvalidateCache(); } }
     private static int _rotationY = 0;
-    internal static int RotationY { get => _rotationY; set { _rotationY = value; ShowPreview(); } }
+    internal static int RotationY { get => _rotationY; set { _rotationY = value; InvalidateCache(); } }
     private static int _rotationZ = 0;
-    internal static int RotationZ { get => _rotationZ; set { _rotationZ = value; ShowPreview(); } }
+    internal static int RotationZ { get => _rotationZ; set { _rotationZ = value; InvalidateCache(); } }
     private static bool _mirrorX = false;
-    internal static bool MirrorX { get => _mirrorX; set { _mirrorX = value; ShowPreview(); } }
+    internal static bool MirrorX { get => _mirrorX; set { _mirrorX = value; InvalidateCache(); } }
     private static bool _mirrorY = false;
-    internal static bool MirrorY { get => _mirrorY; set { _mirrorY = value; ShowPreview(); } }
+    internal static bool MirrorY { get => _mirrorY; set { _mirrorY = value; InvalidateCache(); } }
     private static bool _mirrorZ = false;
-    internal static bool MirrorZ { get => _mirrorZ; set { _mirrorZ = value; ShowPreview(); } }
+    internal static bool MirrorZ { get => _mirrorZ; set { _mirrorZ = value; InvalidateCache(); } }
     private static int _clipMinX = 0;
-    internal static int ClipMinX { get => _clipMinX; set { _clipMinX = value; ShowPreview(); } }
+    internal static int ClipMinX { get => _clipMinX; set { _clipMinX = value; InvalidateCache(); } }
     private static int _clipMaxX = 0;
-    internal static int ClipMaxX { get => _clipMaxX; set { _clipMaxX = value; ShowPreview(); } }
+    internal static int ClipMaxX { get => _clipMaxX; set { _clipMaxX = value; InvalidateCache(); } }
     private static int _clipMinY = 0;
-    internal static int ClipMinY { get => _clipMinY; set { _clipMinY = value; ShowPreview(); } }
+    internal static int ClipMinY { get => _clipMinY; set { _clipMinY = value; InvalidateCache(); } }
     private static int _clipMaxY = 0;
-    internal static int ClipMaxY { get => _clipMaxY; set { _clipMaxY = value; ShowPreview(); } }
+    internal static int ClipMaxY { get => _clipMaxY; set { _clipMaxY = value; InvalidateCache(); } }
     private static int _clipMinZ = 0;
-    internal static int ClipMinZ { get => _clipMinZ; set { _clipMinZ = value; ShowPreview(); } }
+    internal static int ClipMinZ { get => _clipMinZ; set { _clipMinZ = value; InvalidateCache(); } }
     private static int _clipMaxZ = 0;
-    internal static int ClipMaxZ { get => _clipMaxZ; set { _clipMaxZ = value; ShowPreview(); } }
+    internal static int ClipMaxZ { get => _clipMaxZ; set { _clipMaxZ = value; InvalidateCache(); } }
     internal static bool Preview;
+    internal static int Version = 0;
 
     internal static List<CubeData> BackupCubes;
     internal static int PreviewedObjectId = -1;
     internal static List<CubeData> CurrentCubeData;
 
+    private static List<CubeData> _cachedTransformed;
+    private static int _cachedTransformedVersion = -1;
+
     internal static void CopyPropertiesModel()
     {
         Clipboard = KogamaModFramework.Operations.CubeOperations.GetAllCubes(ModelProperties.CubeModelBase);
+        InvalidateCache();
     }
 
     internal static List<CubeData> GetTransformedCubes()
     {
         if (Clipboard == null) return null;
+        if (_cachedTransformedVersion == Version && _cachedTransformed != null)
+            return _cachedTransformed;
+
         var edited = new List<CubeData>(Clipboard);
         if (ClipMinX != 0 || ClipMaxX != 0) edited = Clip(edited, 'x', ClipMinX, ClipMaxX);
         if (ClipMinY != 0 || ClipMaxY != 0) edited = Clip(edited, 'y', ClipMinY, ClipMaxY);
@@ -71,12 +79,18 @@ internal class ClipboardManager
         if (MirrorY) edited = Mirror(edited, 'y');
         if (MirrorZ) edited = Mirror(edited, 'z');
         if (OffsetX != 0 || OffsetY != 0 || OffsetZ != 0) edited = Offset(edited, OffsetX, OffsetY, OffsetZ);
-        return edited;
+
+        _cachedTransformed = edited;
+        _cachedTransformedVersion = Version;
+        return _cachedTransformed;
     }
+
+    private static void InvalidateCache() => Version++;
 
     internal static void ShowPreview()
     {
         Preview = Clipboard != null;
+        Version++;
     }
 
     internal static void PasteEditedModel()

@@ -345,13 +345,10 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 // CLIPBOARD
                 case "clipboard_copy_model":
-                    ClipboardManager.Preview = false;
-                    ClipboardManager.ShowPreview();
                     Clipboard.ClipboardManager.CopyPropertiesModel();
                     break;
                 case "clipboard_paste_model":
                     ClipboardManager.Preview = false;
-                    ClipboardManager.ShowPreview();
                     Clipboard.ClipboardManager.PasteEditedModel();
                     break;
                 // editor

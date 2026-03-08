@@ -37,52 +37,65 @@ internal static class GlLineDrawer
         0,7, 3,4, 2,5, 1,6
     };
 
+    private static readonly List<((int, int, int) a, (int, int, int) b)> _cachedEdges = new();
+    private static int _cachedEdgesVersion = -1;
+
     public static void Cubes(List<CubeData> cubes, Color color,
         Vector3? position = null, Vector3? scale = null, Quaternion? rotation = null)
     {
+        if (cubes == null || cubes.Count == 0) return;
+
         var pos = position ?? Vector3.zero;
         var scl = scale ?? Vector3.one;
         var rot = rotation ?? Quaternion.identity;
 
-        // Pass 1: compute grid coords for all cube corners, count edge occurrences
-        var allGrid = new (int, int, int)[cubes.Count][];
-        var edgeCounts = new Dictionary<((int, int, int), (int, int, int)), int>();
-
-        for (int ci = 0; ci < cubes.Count; ci++)
+        int ver = ClipboardManager.Version;
+        if (ver != _cachedEdgesVersion)
         {
-            var cube = cubes[ci];
-            var c = ClipboardManager.CornerBytesToCoords(cube.Corners);
-            var gi = new (int, int, int)[8];
-            for (int i = 0; i < 8; i++)
-                gi[i] = (cube.X * 4 + c[i].z, cube.Y * 4 + c[i].y, cube.Z * 4 + c[i].x);
-            allGrid[ci] = gi;
+            _cachedEdgesVersion = ver;
+            _cachedEdges.Clear();
 
-            for (int i = 0; i < CubeEdges.Length; i += 2)
+            var allGrid = new (int, int, int)[cubes.Count][];
+            var edgeCounts = new Dictionary<((int, int, int), (int, int, int)), int>();
+
+            for (int ci = 0; ci < cubes.Count; ci++)
             {
-                var a = gi[CubeEdges[i]];
-                var b = gi[CubeEdges[i + 1]];
-                var key = GridLe(a, b) ? (a, b) : (b, a);
-                edgeCounts.TryGetValue(key, out var cnt);
-                edgeCounts[key] = cnt + 1;
+                var cube = cubes[ci];
+                var c = ClipboardManager.CornerBytesToCoords(cube.Corners);
+                var gi = new (int, int, int)[8];
+                for (int i = 0; i < 8; i++)
+                    gi[i] = (cube.X * 4 + c[i].z, cube.Y * 4 + c[i].y, cube.Z * 4 + c[i].x);
+                allGrid[ci] = gi;
+
+                for (int i = 0; i < CubeEdges.Length; i += 2)
+                {
+                    var a = gi[CubeEdges[i]];
+                    var b = gi[CubeEdges[i + 1]];
+                    var key = GridLe(a, b) ? (a, b) : (b, a);
+                    edgeCounts.TryGetValue(key, out var cnt);
+                    edgeCounts[key] = cnt + 1;
+                }
+            }
+
+            for (int ci = 0; ci < cubes.Count; ci++)
+            {
+                var gi = allGrid[ci];
+                for (int i = 0; i < CubeEdges.Length; i += 2)
+                {
+                    var a = gi[CubeEdges[i]];
+                    var b = gi[CubeEdges[i + 1]];
+                    var key = GridLe(a, b) ? (a, b) : (b, a);
+                    if (edgeCounts[key] == 1)
+                        _cachedEdges.Add(key);
+                }
             }
         }
 
-        // Pass 2: draw only exterior edges (appear exactly once)
-        for (int ci = 0; ci < cubes.Count; ci++)
+        foreach (var (a, b) in _cachedEdges)
         {
-            var gi = allGrid[ci];
-            var w = new Vector3[8];
-            for (int i = 0; i < 8; i++)
-                w[i] = rot * new Vector3(gi[i].Item1 / 4f * scl.x, gi[i].Item2 / 4f * scl.y, gi[i].Item3 / 4f * scl.z) + pos;
-
-            for (int i = 0; i < CubeEdges.Length; i += 2)
-            {
-                var a = gi[CubeEdges[i]];
-                var b = gi[CubeEdges[i + 1]];
-                var key = GridLe(a, b) ? (a, b) : (b, a);
-                if (edgeCounts[key] == 1)
-                    Line(w[CubeEdges[i]], w[CubeEdges[i + 1]], color);
-            }
+            var wa = rot * new Vector3(a.Item1 / 4f * scl.x, a.Item2 / 4f * scl.y, a.Item3 / 4f * scl.z) + pos;
+            var wb = rot * new Vector3(b.Item1 / 4f * scl.x, b.Item2 / 4f * scl.y, b.Item3 / 4f * scl.z) + pos;
+            Line(wa, wb, color);
         }
     }
 
