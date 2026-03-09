@@ -9,7 +9,7 @@ namespace KogamaStudio.Generating.Models
     internal class ModelBuilder
     {
         private static readonly int BatchSize = 500;
-        private static readonly int FrameDelay = 1; // DEFAULT: 500
+        private static readonly int FrameDelay = 500; // DEFAULT: 500
 
         internal static float Progress = 0.0f;
         internal static bool CancelGeneration = false;

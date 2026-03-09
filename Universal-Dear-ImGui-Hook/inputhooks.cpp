@@ -38,7 +38,7 @@ namespace inputhook {
             return result;
         }
 
-        // cursor is physically in viewport — if conditions aren't met, use last cached remap to avoid jumps
+        // cursor is physically in viewport - if conditions aren't met, use last cached remap to avoid jumps
         if (!remapCursor || !menu::isOpen || !pipe::openMenu || !pipe::cursorVisible)
         {
             if (sCachedValid)

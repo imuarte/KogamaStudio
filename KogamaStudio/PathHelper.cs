@@ -20,5 +20,10 @@ namespace KogamaStudio
                 "materials"
             );
         }
+
+        public static string GetProjectPath(int planetID)
+        {
+            return Path.Combine(GetPath(), "Projects", planetID.ToString());
+        }
     }
 }

@@ -6,8 +6,10 @@ namespace Explorer {
     struct ObjectEntry {
         std::string id;
         std::string type;
+        std::string name;
     };
 
-    void LoadFromFile();
+    void LoadFromFile(const std::string& path);
+    void SetSelected(const std::string& id);
     void Render();
 }

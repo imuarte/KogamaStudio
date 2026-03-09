@@ -19,6 +19,9 @@
 #include "Players.h"
 #include "Camera.h"
 #include "Explorer.h"
+#include "GameInfo.h"
+#include "Inventory.h"
+#include "ItemProperties.h"
 
 namespace menu {
     bool isOpen = false;
@@ -51,6 +54,8 @@ namespace menu {
         DebugLog(u8"[menu] Rendering menu. isOpen=%d, test=%.2f\n", isOpen, test);
 
         ImGuiIO& io = ImGui::GetIO();
+
+        Recovery::RenderOverlay();
 
         if (!isOpen) {
             viewportHovered = false;
@@ -133,6 +138,9 @@ namespace menu {
             ImGui::DockBuilderDockWindow(u8"###Players",        dockRightBottom);
             ImGui::DockBuilderDockWindow(u8"###Camera",         dockRightBottom);
             ImGui::DockBuilderDockWindow(u8"###Explorer",       dockRightTop);
+            ImGui::DockBuilderDockWindow(u8"###GameInfo",       dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###Inventory",       dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###ItemProperties",  dockRightMid);
             ImGui::DockBuilderFinish(dockId);
         }
 
@@ -204,6 +212,9 @@ namespace menu {
         Players::Render();
         CameraPanel::Render();
         Explorer::Render();
+        GameInfo::Render();
+        Inventory::Render();
+        ItemProperties::Render();
 
         if (ImGui::BeginMainMenuBar())
         {

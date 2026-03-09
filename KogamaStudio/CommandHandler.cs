@@ -257,7 +257,10 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 case "explorer_select":
                     targetWoId = int.Parse(param);
-                    PropertiesManager.SendProperties(targetWoId);
+                    if (Objects.WOIdGetter.Instance != null)
+                        Objects.WOIdGetter.Instance.SelectWO(targetWoId);
+                    else
+                        PropertiesManager.SendProperties(targetWoId);
                     break;
                 case "camera_freecam_enable":
                     Freecam.Enable();
@@ -307,41 +310,47 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
 
                 // PROPERTIES
+                case "properties_remove":
+                    HandleRemove(PropertiesManager.SelectedWOId);
+                    break;
                 case "properties_position_x":
                     {
-                        var wo = WorldObjectOperations.GetObject(Objects.WOIdGetter.LastSelectedWOId.Value);
+                        var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(PropertiesManager.SelectedWOId);
+                        if (wo == null) break;
                         var newPos = wo.Position;
                         newPos.x = float.Parse(param);
-                        WorldObjectOperations.SetPosition(Objects.WOIdGetter.LastSelectedWOId.Value, newPos);
+                        WorldObjectOperations.SetPosition(PropertiesManager.SelectedWOId, newPos);
                         break;
                     }
                 case "properties_position_y":
                     {
-                        var wo = WorldObjectOperations.GetObject(Objects.WOIdGetter.LastSelectedWOId.Value);
+                        var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(PropertiesManager.SelectedWOId);
+                        if (wo == null) break;
                         var newPos = wo.Position;
                         newPos.y = float.Parse(param);
-                        WorldObjectOperations.SetPosition(Objects.WOIdGetter.LastSelectedWOId.Value, newPos);
+                        WorldObjectOperations.SetPosition(PropertiesManager.SelectedWOId, newPos);
                         break;
                     }
                 case "properties_position_z":
                     {
-                        var wo = WorldObjectOperations.GetObject(Objects.WOIdGetter.LastSelectedWOId.Value);
+                        var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(PropertiesManager.SelectedWOId);
+                        if (wo == null) break;
                         var newPos = wo.Position;
                         newPos.z = float.Parse(param);
-                        WorldObjectOperations.SetPosition(Objects.WOIdGetter.LastSelectedWOId.Value, newPos);
+                        WorldObjectOperations.SetPosition(PropertiesManager.SelectedWOId, newPos);
                         break;
                     }
                 case "properties_rotation_x":
                     currentEulerAngles.x = float.Parse(param);
-                    WorldObjectOperations.SetRotation(Objects.WOIdGetter.LastSelectedWOId.Value, Quaternion.Euler(currentEulerAngles));
+                    WorldObjectOperations.SetRotation(PropertiesManager.SelectedWOId, Quaternion.Euler(currentEulerAngles));
                     break;
                 case "properties_rotation_y":
                     currentEulerAngles.y = float.Parse(param);
-                    WorldObjectOperations.SetRotation(Objects.WOIdGetter.LastSelectedWOId.Value, Quaternion.Euler(currentEulerAngles));
+                    WorldObjectOperations.SetRotation(PropertiesManager.SelectedWOId, Quaternion.Euler(currentEulerAngles));
                     break;
                 case "properties_rotation_z":
                     currentEulerAngles.z = float.Parse(param);
-                    WorldObjectOperations.SetRotation(Objects.WOIdGetter.LastSelectedWOId.Value, Quaternion.Euler(currentEulerAngles));
+                    WorldObjectOperations.SetRotation(PropertiesManager.SelectedWOId, Quaternion.Euler(currentEulerAngles));
                     break;
                 // CLIPBOARD
                 case "clipboard_copy_model":
@@ -408,6 +417,33 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     Clipboard.ClipboardManager.ShowPreview();
                     Clipboard.ClipboardManager.Preview = param == "true";
                     break;
+                case "inventory_refresh":
+                {
+                    var shopRepo = MVGameControllerBase.EditModeUI?.Cast<DesktopEditModeController>()?.PlayerShopInventoryRepository;
+                    if (shopRepo?.InventoryCategories != null)
+                        foreach (var kvp in shopRepo.InventoryCategories)
+                        {
+                            var catName = kvp.Value?.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ").Trim() ?? "";
+                            MelonLogger.Msg($"[Inventory] Category: '{catName}' (raw: '{kvp.Value?.Replace("\r", "\\r").Replace("\n", "\\n")}') key={kvp.Key}");
+                            var items = shopRepo.GetInventoryItemsInCategorySlow(kvp.Value);
+                            if (items == null) continue;
+                            foreach (var item in items)
+                                PipeClient.SendCommand($"inventory_item|{item.itemID}|{item.name ?? ""}|{item.itemTypeID}|{(int)kvp.Key}|{catName}|{item.resellable}|{item.priceGold}|{item.purchased}|{item.authorProfileID}|{item.slotPosition}|{item.description ?? ""}");
+                        }
+                    break;
+                }
+                case "inventory_remove":
+                {
+                    if (int.TryParse(param, out int removeId))
+                        MVGameControllerBase.OperationRequests.RemoveItemFromInventory(removeId);
+                    break;
+                }
+                case "inventory_add_object":
+                {
+                    if (int.TryParse(param, out int woId))
+                        InventoryManager.AddItem(woId);
+                    break;
+                }
                 case "recovery_disable_loading_screen":
                     RecoveryMode.DisableLoadingScreen();
                     break;
@@ -416,6 +452,33 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 case "recovery_remove_item":
                     InventoryManager.RemoveItem(RecoveryMode.TargetItemId);
+                    break;
+                case "recovery_remove_category":
+                {
+                    if (!int.TryParse(param, out int catId)) break;
+                    var shopRepo = MVGameControllerBase.EditModeUI?.Cast<DesktopEditModeController>()?.PlayerShopInventoryRepository;
+                    if (shopRepo?.InventoryCategories == null) break;
+                    foreach (var kvp in shopRepo.InventoryCategories)
+                    {
+                        if ((int)kvp.Key != catId) continue;
+                        var items = shopRepo.GetInventoryItemsInCategorySlow(kvp.Value);
+                        if (items != null) foreach (var item in items) InventoryManager.RemoveItem(item.itemID);
+                        break;
+                    }
+                    break;
+                }
+                case "recovery_remove_object":
+                    if (int.TryParse(param, out int removeWoId))
+                        HandleRemove(removeWoId);
+                    break;
+                case "recovery_teleport_to_object":
+                    if (int.TryParse(param, out int teleportWoId))
+                    {
+                        var recoveryTargetWo = MVGameControllerBase.WOCM?.GetWorldObjectClient(teleportWoId);
+                        var recoveryLocalWo = MVGameControllerBase.WOCM?.GetWorldObjectClient(MVGameControllerBase.LocalPlayer.WoId);
+                        if (recoveryTargetWo != null && recoveryLocalWo != null)
+                            recoveryLocalWo.Position = recoveryTargetWo.Position;
+                    }
                     break;
                 case "teleport_player":
                     var playerWo = WorldObjectOperations.GetObject(int.Parse(param));

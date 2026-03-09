@@ -24,6 +24,12 @@ namespace Properties {
         {
             ImGui::Text(u8"%s: %s", T(u8"Object ID"), targetObjectId.c_str());
 
+            if (ImGui::Button(T(u8"Remove"))) SendCommand(u8"properties_remove");
+            ImGui::SameLine();
+            if (ImGui::Button(T(u8"Teleport to"))) SendCommand((u8"recovery_teleport_to_object|" + targetObjectId).c_str());
+            ImGui::SameLine();
+            if (ImGui::Button(T(u8"Add to Inventory"))) SendCommand((u8"inventory_add_object|" + targetObjectId).c_str());
+
             if (ImGui::CollapsingHeader(T(u8"Transform"), ImGuiTreeNodeFlags_DefaultOpen)) {
 
                 ImGui::Text(T(u8"Position"));

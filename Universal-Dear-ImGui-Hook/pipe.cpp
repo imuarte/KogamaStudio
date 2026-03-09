@@ -9,6 +9,8 @@
 #include "Console.h"
 #include "Players.h"
 #include "Explorer.h"
+#include "GameInfo.h"
+#include "Inventory.h"
 
 
 namespace pipe {
@@ -110,6 +112,21 @@ namespace pipe {
         {
             Recovery::recoveryOpen = true;
         }
+        else if (command == "recovery_corruption_detected")
+        {
+            Recovery::corruptionDetected = true;
+            Recovery::recoveryOpen = true;
+        }
+        else if (command == "recovery_problem")
+        {
+            size_t p1 = param.find("|");
+            std::string objectId = param.substr(0, p1);
+            std::string rest = (p1 != std::string::npos) ? param.substr(p1 + 1) : "";
+            size_t p2 = rest.find("|");
+            std::string actionType = rest.substr(0, p2);
+            std::string description = (p2 != std::string::npos) ? rest.substr(p2 + 1) : rest;
+            Recovery::AddProblem(objectId, actionType, description);
+        }
         else if (command == "console_log")
         {
             AppLog::AddLog(AppLog::LogType::Incoming, param.c_str());
@@ -128,7 +145,43 @@ namespace pipe {
         }
         else if (command == "explorer_ready")
         {
-            Explorer::LoadFromFile();
+            Explorer::LoadFromFile(param);
+        }
+        else if (command == "explorer_set_selected")
+        {
+            Explorer::SetSelected(param);
+        }
+        else if (command == "gameinfo_update")
+        {
+            GameInfo::SetData(param);
+        }
+        else if (command == "inventory_item")
+        {
+            // Format: id|name|typeId|categoryId|categoryName|resellable|priceGold|purchased|authorProfileId|slotPosition|description
+            auto trim = [](std::string s) -> std::string { while (!s.empty() && (s.back() == '\r' || s.back() == '\n' || s.back() == ' ')) s.pop_back(); return s; };
+            auto nextField = [&](std::string& s) -> std::string {
+                size_t p = s.find('|');
+                if (p == std::string::npos) { std::string v = trim(s); s.clear(); return v; }
+                std::string v = trim(s.substr(0, p));
+                s = s.substr(p + 1);
+                return v;
+            };
+
+            Inventory::InventoryItem item;
+            std::string rest = param;
+            item.id             = nextField(rest);
+            item.name           = nextField(rest);
+            item.typeId         = nextField(rest);
+            item.categoryId     = nextField(rest);
+            item.categoryName   = nextField(rest);
+            item.resellable     = (nextField(rest) == "True");
+            { std::string f = nextField(rest); item.priceGold    = f.empty() ? 0 : ::atoi(f.c_str()); }
+            item.purchased      = (nextField(rest) == "True");
+            item.authorProfileId = nextField(rest);
+            { std::string f = nextField(rest); item.slotPosition = f.empty() ? 0 : ::atoi(f.c_str()); }
+            item.description    = rest;
+
+            Inventory::AddItem(item);
         }
     }
 

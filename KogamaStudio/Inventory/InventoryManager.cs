@@ -1,16 +1,34 @@
-﻿using Il2Cpp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using HarmonyLib;
+using Il2Cpp;
+using MelonLoader;
 
 namespace KogamaStudio.Inventory;
 
+[HarmonyPatch]
 internal class InventoryManager
 {
+    internal static bool AddingToInventory = false;
+
     internal static void RemoveItem(int itemId)
     {
-        MVGameControllerBase.OperationRequests.RequestRemoveItemFromMarketPlace(itemId);
+        MVGameControllerBase.OperationRequests.RemoveItemFromInventory(itemId);
+    }
+
+    internal static void AddItem(int worldObjectID)
+    {
+        var game = MVGameControllerBase.Game.operationRequests;
+        if (game == null) { MelonLogger.Warning("[Inventory] MVNetworkGame not found"); return; }
+        AddingToInventory = true;
+        game.AddWorldObjectToInventory(worldObjectID);
+        AddingToInventory = false;
+    }
+
+    [HarmonyPatch(typeof(MaterialLoader), nameof(MaterialLoader.CheckAtlasIntegrity))]
+    [HarmonyPrefix]
+    private static bool CheckAtlasIntegrity_Prefix(ref bool __result)
+    {
+        if (!AddingToInventory) return true;
+        __result = true;
+        return false;
     }
 }

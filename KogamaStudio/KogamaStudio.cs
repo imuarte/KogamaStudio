@@ -52,6 +52,7 @@ namespace KogamaStudio
                     TextCommand.NotifyUser($"<b>KogamaStudio</b> v{KSVersion.Value} loaded!\nPress <b>F2</b> to open menu.");
                     Players.PlayerList.Start();
                     GlLineDrawer.Init();
+                    GameInfo.Init();
                 }
 
             }
@@ -87,11 +88,11 @@ namespace KogamaStudio
                 PipeClient.SendCommand("key_down|F2");
             }
 
-            // recovery mode
-            //if (UnityEngine.Input.GetKeyDown(KeyCode.F8))
-            //{
-            //    RecoveryMode.EnableRecoveryMode();
-            //}
+            //recovery mode
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F8))
+            {
+                RecoveryMode.EnableRecoveryMode();
+            }
 
             if (AddLinePatch.TranslateTextCubesEnabled)
             {

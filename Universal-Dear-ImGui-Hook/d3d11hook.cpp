@@ -119,23 +119,10 @@ namespace hooks_dx11 {
                 static const ImWchar glyphRanges[] = {
                     0x0020, 0x00FF, // Basic Latin + Latin-1 Supplement
                     0x0100, 0x017F, // Latin Extended-A
-                    0x0180, 0x024F, // Latin Extended-B
-                    0x0250, 0x02AF, // IPA Extensions
-                    0x02B0, 0x02FF, // Spacing Modifier Letters (˚)
-                    0x0300, 0x036F, // Combining Diacritical Marks
-                    0x0370, 0x03FF, // Greek and Coptic
                     0x0400, 0x04FF, // Cyrillic
-                    0x0500, 0x052F, // Cyrillic Supplement
-                    0x1E00, 0x1EFF, // Latin Extended Additional
-                    0x2000, 0x206F, // General Punctuation
-                    0x20A0, 0x20CF, // Currency Symbols
-                    0x2100, 0x214F, // Letterlike Symbols
-                    0x2190, 0x21FF, // Arrows
-                    0x2200, 0x22FF, // Mathematical Operators (∘)
-                    0x25A0, 0x25FF, // Geometric Shapes
-                    0x2600, 0x26FF, // Miscellaneous Symbols
                     0,
                 };
+
                 bool fontLoaded = false;
                 if (!Appearance::fontPath.empty() && Appearance::fontSize > 0) {
                     FILE* f = nullptr;
@@ -144,12 +131,11 @@ namespace hooks_dx11 {
                         fontLoaded = (io.Fonts->AddFontFromFileTTF(Appearance::fontPath.c_str(), Appearance::fontSize, nullptr, glyphRanges) != nullptr);
                     }
                 }
-                if (!fontLoaded) {
+                if (!fontLoaded)
                     fontLoaded = (io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\consola.ttf", 13.0f, nullptr, glyphRanges) != nullptr);
-                }
-                if (!fontLoaded) {
+                if (!fontLoaded)
                     io.Fonts->AddFontDefaultVector();
-                }
+
                 io.Fonts->Build();
 
                 io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;

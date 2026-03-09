@@ -21,9 +21,9 @@ internal class TransformPatch
     [HarmonyPrefix]
     internal static void TransferOwnershipPrefix(MVNetworkGame __instance, int worldObjectID, int ownerActorNr, Transform t)
     {
-        PropertiesManager.SendProperties(worldObjectID);
-        SavedNetworkGame = __instance;
-        SavedWorldObjectID = worldObjectID;
-        SavedOwnerActorNr = ownerActorNr;
+        //PropertiesManager.SendProperties(worldObjectID);
+        //SavedNetworkGame = __instance;
+        //SavedWorldObjectID = worldObjectID;
+        //SavedOwnerActorNr = ownerActorNr;
     }
 }

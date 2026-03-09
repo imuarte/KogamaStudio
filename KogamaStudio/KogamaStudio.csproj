@@ -95,7 +95,7 @@
   </ItemGroup>
 
   <Target Name="GenerateKSVersion" BeforeTargets="BeforeBuild">
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$v=(Get-Content '$(MSBuildProjectDirectory)\..\version.txt').Trim(); Set-Content -Path '$(MSBuildProjectDirectory)\KSVersion.cs' -Value ('namespace KogamaStudio { public static class KSVersion { public const string Value = ' + [char]34 + $v + [char]34 + '; } }')&quot;" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;try { $v=(Get-Content '$(MSBuildProjectDirectory)\..\version.txt').Trim(); Set-Content -Path '$(MSBuildProjectDirectory)\KSVersion.cs' -Value ('namespace KogamaStudio { public static class KSVersion { public const string Value = ' + [char]34 + $v + [char]34 + '; } }') } catch { exit 0 }&quot;" />
   </Target>
 
 </Project>

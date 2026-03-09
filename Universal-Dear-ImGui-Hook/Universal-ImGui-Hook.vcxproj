@@ -130,7 +130,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <PreBuildEvent>
-      <Command>powershell -NoProfile -ExecutionPolicy Bypass -Command "$v=(Get-Content '$(ProjectDir)..\version.txt').Trim(); Set-Content -Path '$(ProjectDir)version.h' -Value ('#pragma once' + [char]10 + '#define KS_VERSION ' + [char]34 + $v + [char]34)"</Command>
+      <Command>powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $v=(Get-Content '$(ProjectDir)..\version.txt').Trim(); Set-Content -Path '$(ProjectDir)version.h' -Value ('#pragma once' + [char]10 + '#define KS_VERSION ' + [char]34 + $v + [char]34) } catch { exit 0 }"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
 
@@ -139,6 +139,8 @@
     <ClCompile Include="Appearance.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Explorer.cpp" />
+    <ClCompile Include="Inventory.cpp" />
+    <ClCompile Include="ItemProperties.cpp" />
     <ClCompile Include="Clipboard.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="d3d9hook.cpp" />
@@ -160,6 +162,7 @@
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="GameInfo.cpp" />
     <ClCompile Include="inputhooks.cpp" />
     <ClCompile Include="menu.cpp" />
     <ClCompile Include="MenuHelpers.cpp" />
@@ -180,6 +183,8 @@
     <ClInclude Include="..\..\..\..\Downloads\stb_image.h" />
     <ClInclude Include="About.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="GameInfo.h" />
+    <ClInclude Include="IconsFontAwesome6.h" />
     <ClInclude Include="Explorer.h" />
     <ClInclude Include="ResourcePackLoader.h" />
     <ClInclude Include="Appearance.h" />

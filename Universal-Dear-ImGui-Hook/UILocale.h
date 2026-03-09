@@ -1,5 +1,5 @@
 #pragma once
-// No STL includes here — only primitive types to avoid PCH conflicts with <windows.h>
+// No STL includes here - only primitive types to avoid PCH conflicts with <windows.h>
 
 namespace Locale {
     void SetLanguage(const char* langCode);
