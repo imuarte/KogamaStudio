@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "pipe.h"
 #include "Appearance.h"
+#include "IconsFontAwesome6.h"
 
 namespace hooks_dx11 {
     using Microsoft::WRL::ComPtr;
@@ -136,7 +137,17 @@ namespace hooks_dx11 {
                 if (!fontLoaded)
                     io.Fonts->AddFontDefaultVector();
 
-                io.Fonts->Build();
+                // Merge FA6 icons into the main font
+                {
+                    ImFontConfig cfg;
+                    cfg.MergeMode  = true;
+                    cfg.PixelSnapH = true;
+                    static const ImWchar ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+                    const char* faPath = "C:\\Users\\mexav\\AppData\\Local\\KogamaStudio\\Fonts\\fa-solid-900.ttf";
+                    io.Fonts->AddFontFromFileTTF(faPath,
+                        Appearance::fontSize > 0 ? Appearance::fontSize : 13.0f,
+                        &cfg, ranges);
+                }
 
                 io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
                 io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;

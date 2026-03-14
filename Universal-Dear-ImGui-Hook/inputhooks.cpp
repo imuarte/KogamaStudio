@@ -8,7 +8,10 @@ namespace inputhook {
 
     bool remapCursor = false;
 
-    static const float kViewportOffsetY = 10.0f;
+    static float GetViewportOffsetY()
+    {
+        return pipe::isFullscreen ? 0.0f : 10.0f;
+    }
 
     typedef BOOL(WINAPI* GetCursorPosFn)(LPPOINT);
     static GetCursorPosFn oGetCursorPos = nullptr;
@@ -28,18 +31,18 @@ namespace inputhook {
         float screenX = (float)lpPoint->x;
         float screenY = (float)lpPoint->y;
 
-        bool inViewport = imgW > 0.0f && imgH > 0.0f &&
-                          screenX >= menu::viewportImageMin.x && screenX <= menu::viewportImageMax.x &&
-                          screenY >= menu::viewportImageMin.y + kViewportOffsetY && screenY <= menu::viewportImageMax.y + kViewportOffsetY;
-
-        if (!inViewport)
+        // if menu closed or remapping disabled, unfreeze and pass through
+        if (!remapCursor || !menu::isOpen || !pipe::openMenu || !pipe::cursorVisible)
         {
             sCachedValid = false;
             return result;
         }
 
-        // cursor is physically in viewport - if conditions aren't met, use last cached remap to avoid jumps
-        if (!remapCursor || !menu::isOpen || !pipe::openMenu || !pipe::cursorVisible)
+        bool inViewport = imgW > 0.0f && imgH > 0.0f &&
+                          screenX >= menu::viewportImageMin.x && screenX <= menu::viewportImageMax.x &&
+                          screenY >= menu::viewportImageMin.y + GetViewportOffsetY() && screenY <= menu::viewportImageMax.y + GetViewportOffsetY();
+
+        if (!inViewport)
         {
             if (sCachedValid)
                 *lpPoint = sCachedRemappedPt;
@@ -52,9 +55,9 @@ namespace inputhook {
         ClientToScreen(globals::mainWindow, &originPt);
 
         float relX = max(0.0f, min(1.0f, (screenX - menu::viewportImageMin.x) / imgW));
-        float relY = max(0.0f, min(1.0f, (screenY - (menu::viewportImageMin.y + kViewportOffsetY)) / imgH));
+        float relY = max(0.0f, min(1.0f, (screenY - (menu::viewportImageMin.y + GetViewportOffsetY())) / imgH));
         lpPoint->x = originPt.x + (LONG)roundf(relX * (float)clientRect.right);
-        lpPoint->y = originPt.y + (LONG)roundf(relY * (float)clientRect.bottom - menu::menuBarHeight);
+        lpPoint->y = originPt.y + (LONG)roundf(relY * (float)clientRect.bottom - menu::menuBarHeight) - (pipe::isFullscreen ? -18 : 0);
 
         sCachedRemappedPt = *lpPoint;
         sCachedValid = true;
@@ -153,17 +156,17 @@ namespace inputhook {
 
                 bool inViewport = imgW > 0.0f && imgH > 0.0f &&
                     screenX >= menu::viewportImageMin.x && screenX <= menu::viewportImageMax.x &&
-                    screenY >= menu::viewportImageMin.y + kViewportOffsetY && screenY <= menu::viewportImageMax.y + kViewportOffsetY;
+                    screenY >= menu::viewportImageMin.y + GetViewportOffsetY() && screenY <= menu::viewportImageMax.y + GetViewportOffsetY();
 
                 if (inViewport)
                 {
                     float relX = max(0.0f, min(1.0f, (screenX - menu::viewportImageMin.x) / imgW));
-                    float relY = max(0.0f, min(1.0f, (screenY - (menu::viewportImageMin.y + kViewportOffsetY)) / imgH));
+                    float relY = max(0.0f, min(1.0f, (screenY - (menu::viewportImageMin.y + GetViewportOffsetY())) / imgH));
                     RECT clientRect;
                     GetClientRect(hwnd, &clientRect);
                     lParam = MAKELPARAM(
                         (int)roundf(relX * (float)clientRect.right),
-                        (int)roundf(relY * (float)clientRect.bottom - menu::menuBarHeight)
+                        (int)roundf(relY * (float)clientRect.bottom - menu::menuBarHeight) - (pipe::isFullscreen ? -18 : 0)
                     );
                 }
                 else

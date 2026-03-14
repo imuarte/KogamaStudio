@@ -4,7 +4,8 @@
 Name "KogamaStudio Installer"
 OutFile "KogamaStudio-Installer.exe"
 InstallDir "$LOCALAPPDATA"
-Icon "icon.ico"
+!define MUI_ICON "icon.ico"
+!define MUI_UNICON "icon.ico"
 BrandingText " "
 RequestExecutionLevel user
 
@@ -25,7 +26,7 @@ LangString SelectServerUninstall ${LANG_ENGLISH} "Select KogamaLauncher Server t
 LangString CustomFolder ${LANG_ENGLISH} "Custom folder"
 LangString RemoveUserData ${LANG_ENGLISH} "Do you want to remove user data from KogamaStudio folder?$\n(Settings, saves, etc. will be deleted)"
 LangString UninstallSuccess ${LANG_ENGLISH} "KogamaStudio uninstalled successfully!"
-LangString InstallSuccess ${LANG_ENGLISH} "KogamaStudio v0.4.2 installed successfully!"
+LangString InstallSuccess ${LANG_ENGLISH} "KogamaStudio installed successfully!"
 
 Page Custom ModePage LeaveModeSelectPage
 Page Custom ServerSelectPage LeaveServerSelectPage

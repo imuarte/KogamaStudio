@@ -56,10 +56,99 @@ internal class ClipboardManager
     private static List<CubeData> _cachedTransformed;
     private static int _cachedTransformedVersion = -1;
 
+    internal static void Clear()
+    {
+        Clipboard = null;
+        InvalidateCache();
+        SendCount();
+    }
+
     internal static void CopyPropertiesModel()
     {
         Clipboard = KogamaModFramework.Operations.CubeOperations.GetAllCubes(ModelProperties.CubeModelBase);
         InvalidateCache();
+        SendCount();
+    }
+
+    internal static void SendCount()
+    {
+        PipeClient.SendCommand($"clipboard_count|{Clipboard?.Count ?? 0}");
+    }
+
+    private static readonly byte[] KsCubesMagic = { (byte)'K', (byte)'S', (byte)'C', (byte)'B' };
+
+    internal static void SaveToFile(string path)
+    {
+        if (Clipboard == null || Clipboard.Count == 0) { MelonLogger.Warning("[Clipboard] Nothing to save"); return; }
+        if (!Path.IsPathRooted(path))
+        {
+            var dir = Path.Combine(PathHelper.GetPath(), "Generate", "Cubes");
+            Directory.CreateDirectory(dir);
+            path = Path.Combine(dir, path + ".kscubes");
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using var fs = File.Open(path, FileMode.Create);
+        using var bw = new BinaryWriter(fs);
+        bw.Write(KsCubesMagic);
+        bw.Write((byte)1); // version
+        bw.Write(Clipboard.Count);
+        foreach (var c in Clipboard)
+        {
+            bw.Write(c.X);
+            bw.Write(c.Y);
+            bw.Write(c.Z);
+            bw.Write(c.Materials);
+            bw.Write(c.Corners);
+        }
+        MelonLogger.Msg($"[Clipboard] Saved {Clipboard.Count} cubes to {path}");
+    }
+
+    internal static void LoadFromFile(string path)
+    {
+        if (!Path.IsPathRooted(path))
+            path = Path.Combine(PathHelper.GetPath(), "Generate", "Cubes", path + ".kscubes");
+        if (!File.Exists(path)) { MelonLogger.Warning($"[Clipboard] File not found: {path}"); return; }
+        using var fs = File.OpenRead(path);
+        bool isJson = fs.ReadByte() == '{';
+        fs.Seek(0, SeekOrigin.Begin);
+        if (isJson)
+        {
+            MelonLogger.Warning("[Clipboard] JSON .kscubes format is deprecated and will be removed in v1.0.0. Resave the file to convert it to binary.");
+            using var reader = new StreamReader(fs);
+            var jObj = Newtonsoft.Json.Linq.JObject.Parse(reader.ReadToEnd());
+            var cubesArray = jObj["cubes"] as Newtonsoft.Json.Linq.JArray;
+            if (cubesArray == null) { MelonLogger.Warning("[Clipboard] Invalid file"); return; }
+            Clipboard = cubesArray.Select(c => new CubeData(
+                c.Value<int>("x"), c.Value<int>("y"), c.Value<int>("z"),
+                c["materials"]?.ToObject<byte[]>(), c["corners"]?.ToObject<byte[]>()
+            )).ToList();
+        }
+        else
+        {
+            using var br = new BinaryReader(fs);
+            var magic = br.ReadBytes(4);
+            if (magic[0] != 'K' || magic[1] != 'S' || magic[2] != 'C' || magic[3] != 'B')
+            {
+                MelonLogger.Error("[Clipboard] Unknown file format");
+                return;
+            }
+            br.ReadByte(); // version
+            int count = br.ReadInt32();
+            var cubes = new List<CubeData>(count);
+            for (int i = 0; i < count; i++)
+            {
+                int x = br.ReadInt32();
+                int y = br.ReadInt32();
+                int z = br.ReadInt32();
+                byte[] materials = br.ReadBytes(6);
+                byte[] corners = br.ReadBytes(8);
+                cubes.Add(new CubeData(x, y, z, materials, corners));
+            }
+            Clipboard = cubes;
+        }
+        InvalidateCache();
+        SendCount();
+        MelonLogger.Msg($"[Clipboard] Loaded {Clipboard.Count} cubes from {path}");
     }
 
     internal static List<CubeData> GetTransformedCubes()
@@ -93,6 +182,8 @@ internal class ClipboardManager
         Version++;
     }
 
+    internal static int LastPasteTotalCubes = 0;
+
     internal static void PasteEditedModel()
     {
         var edited = new List<CubeData>(Clipboard);
@@ -123,6 +214,7 @@ internal class ClipboardManager
 
         if (!KogamaModFramework.Operations.CubeOperations.IsBuilding)
         {
+            LastPasteTotalCubes = edited.Count;
             MelonCoroutines.Start(KogamaModFramework.Operations.CubeOperations.Add(ModelProperties.CubeModelBase, edited));
         }
     }

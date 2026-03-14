@@ -2,4 +2,5 @@
 
 namespace CameraPanel {
     void Render();
+    void ResetModeSelection();
 }

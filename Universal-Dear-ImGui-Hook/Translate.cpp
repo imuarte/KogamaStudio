@@ -13,6 +13,12 @@ namespace Translate {
 
 	void Render()
 	{
+        if (!ImGui::Begin((std::string(T(u8"Translate")) + u8"###Translate").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
+        {
+            ImGui::End();
+            return;
+        }
+
         // translate own messages
 		if (ImGui::Checkbox(T(u8"Translate Own Messages"), &TranslateOwnMessagesEnabled)) {
 			if (TranslateOwnMessagesEnabled) SendCommand(u8"translate_own_messages_enabled|true");
@@ -61,6 +67,8 @@ namespace Translate {
 
 			ImGui::Unindent();
 		}
+
+        ImGui::End();
 	}
 
 }

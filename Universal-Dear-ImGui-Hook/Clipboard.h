@@ -6,6 +6,7 @@ namespace Clipboard {
 
     void Render();
 
+    extern int cubeCount;
     extern int offsetX;
     extern int offsetY;
     extern int offsetZ;

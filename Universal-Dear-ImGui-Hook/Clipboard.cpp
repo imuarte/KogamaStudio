@@ -1,11 +1,51 @@
 #include "Properties.h"
 #include "MenuHelpers.h"
 #include "pipe.h"
+#include <commdlg.h>
 
 using namespace menu;
 
 namespace Clipboard {
 
+    static std::string GetModelsDir()
+    {
+        char buf[MAX_PATH] = "";
+        GetEnvironmentVariableA("LOCALAPPDATA", buf, MAX_PATH);
+        std::string dir = std::string(buf) + "\\KogamaStudio\\models";
+        CreateDirectoryA(dir.c_str(), NULL);
+        return dir;
+    }
+
+    static std::string OpenDialog()
+    {
+        char filename[MAX_PATH] = "";
+        std::string initDir = GetModelsDir();
+        OPENFILENAMEA ofn = {};
+        ofn.lStructSize  = sizeof(ofn);
+        ofn.lpstrFilter  = "KS Cubes (*.kscubes)\0*.kscubes\0All Files\0*.*\0";
+        ofn.lpstrFile    = filename;
+        ofn.nMaxFile     = MAX_PATH;
+        ofn.lpstrInitialDir = initDir.c_str();
+        ofn.Flags        = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+        return GetOpenFileNameA(&ofn) ? std::string(filename) : "";
+    }
+
+    static std::string SaveDialog()
+    {
+        char filename[MAX_PATH] = "model.kscubes";
+        std::string initDir = GetModelsDir();
+        OPENFILENAMEA ofn = {};
+        ofn.lStructSize  = sizeof(ofn);
+        ofn.lpstrFilter  = "KS Cubes (*.kscubes)\0*.kscubes\0All Files\0*.*\0";
+        ofn.lpstrFile    = filename;
+        ofn.nMaxFile     = MAX_PATH;
+        ofn.lpstrInitialDir = initDir.c_str();
+        ofn.lpstrDefExt  = "kscubes";
+        ofn.Flags        = OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+        return GetSaveFileNameA(&ofn) ? std::string(filename) : "";
+    }
+
+    int cubeCount = 0;
     int offsetX = 0.0f;
     int offsetY = 0.0f;
     int offsetZ = 0.0f;
@@ -25,6 +65,14 @@ namespace Clipboard {
         ImGuiWindowFlags newFlags = ImGuiWindowFlags_NoCollapse;
         if (ImGui::Begin((std::string(T(u8"Clipboard")) + u8"###Clipboard").c_str(), nullptr, newFlags))
         {
+            ImGui::Text("%s: %d", T(u8"Cubes"), cubeCount);
+
+            ImGui::Separator();
+            if (ImGui::Button(T(u8"Save .kscubes"))) { std::string p = SaveDialog(); if (!p.empty()) SendCommand((std::string(u8"clipboard_save_to_file|") + p).c_str()); }
+            ImGui::SameLine();
+            if (ImGui::Button(T(u8"Load .kscubes"))) { std::string p = OpenDialog(); if (!p.empty()) SendCommand((std::string(u8"clipboard_load_from_file|") + p).c_str()); }
+            ImGui::Separator();
+
             if (ImGui::CollapsingHeader(T(u8"Transform"))) {
                 // OFFSET
                 ImGui::Text(T(u8"Offset"));

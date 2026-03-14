@@ -44,6 +44,7 @@ internal class ModelProperties
         try { result = mVWorldObjectClient.Cast<MVWorldObjectSpawnerVehicleEnergy>().vehicleEnergyChild.CubeModelInstance; return result; } catch { }
         try { result = mVWorldObjectClient.Cast<MVDoorBlueprint>().DoorLogic.doorModelInstance; return result; } catch { }
         try { result = mVWorldObjectClient.Cast<MVCubeModelInstance>(); return result; } catch { }
+        try { result = mVWorldObjectClient.Cast<MVCubeModelPrototypeTerrain>(); return result; } catch { }
 
         return null;
     }

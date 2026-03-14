@@ -19,9 +19,11 @@ namespace Inventory {
     };
 
     void Clear();
+    void ClearSelection();
     void AddItem(const InventoryItem& item);
     bool HasSelected();
     const InventoryItem& GetSelected();
+    const InventoryItem* FindById(const std::string& id);
     const std::map<std::string, std::vector<InventoryItem>>& GetCategories();
     void Render();
 }

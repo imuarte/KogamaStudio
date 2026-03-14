@@ -7,6 +7,7 @@ namespace Explorer {
         std::string id;
         std::string type;
         std::string name;
+        int itemId = -1;
     };
 
     void LoadFromFile(const std::string& path);

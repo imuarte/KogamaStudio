@@ -12,16 +12,22 @@ namespace ResourcePacks {
 
 	void Render()
 	{
+        if (!ImGui::Begin((std::string(T(u8"Resource Packs")) + u8"###ResourcePacks").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
+        {
+            ImGui::End();
+            return;
+        }
+
         if (!packsLoaded) {
             cachedPacks = LoadPacks();
             packsLoaded = true;
         }
 
-        if (ImGui::Button("Refesh Packs")) cachedPacks = LoadPacks();
+        if (ImGui::Button(T(u8"Refresh Packs"))) cachedPacks = LoadPacks();
         ImGui::SameLine();
-        if (ImGui::Button("Open Folder")) OpenFolder("ResourcePacks");
+        if (ImGui::Button(T(u8"Open Folder"))) OpenFolder("ResourcePacks");
         ImGui::SameLine();
-        if (ImGui::Button("Reset")) SendCommand("resourcepacks_reset");
+        if (ImGui::Button(T(u8"Reset"))) SendCommand("resourcepacks_reset");
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -39,7 +45,7 @@ namespace ResourcePacks {
 
                 ImGui::Spacing();
                 ImGui::Spacing();
-                if (ImGui::Button("Load", ImVec2(-1, 0))) SendCommand(cmd);
+                if (ImGui::Button(T(u8"Load"), ImVec2(-1, 0))) SendCommand(cmd);
 
                 ImGui::NextColumn();
                 ImGui::Image(icon, ImVec2(80, 80));
@@ -53,6 +59,8 @@ namespace ResourcePacks {
             std::string cmd = std::string("resourcepacks_load|") + p.folder;
             DrawPack(p.name.c_str(), p.author.c_str(), p.description.c_str(), cmd.c_str(), p.iconTexture);
         }
+
+        ImGui::End();
 	}
 
 }

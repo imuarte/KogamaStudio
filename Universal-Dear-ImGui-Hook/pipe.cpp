@@ -11,6 +11,8 @@
 #include "Explorer.h"
 #include "GameInfo.h"
 #include "Inventory.h"
+#include "History.h"
+#include "Camera.h"
 
 
 namespace pipe {
@@ -19,6 +21,13 @@ namespace pipe {
     bool gameInitialized = false;
     bool openMenu = false;
     float generateProgress = 0.0f;
+    bool isFullscreen = false;
+
+    bool  isPasteBuilding  = false;
+    int   pastePlacedCubes = 0;
+    int   pasteTotalCubes  = 0;
+    float pasteEtaSeconds  = -1.0f;
+
 
     void ProcessCommand(const std::string& cmd)
     {
@@ -40,6 +49,10 @@ namespace pipe {
             {
                 cursorVisible = false;
             }
+        }
+        else if (command == "fullscreen")
+        {
+            isFullscreen = param == "true";
         }
         else if (command == "game_initialized")
         {
@@ -85,6 +98,7 @@ namespace pipe {
         else if (command == "properties_object_id")
         {
             Properties::targetObjectId = param;
+            Inventory::ClearSelection();
         }
         else if (command == "properties_is_model")
         {
@@ -96,6 +110,30 @@ namespace pipe {
             {
                 Properties::isModel = false;
             }
+        }
+        else if (command == "clipboard_count")
+        {
+            Clipboard::cubeCount = param.empty() ? 0 : ::atoi(param.c_str());
+        }
+        else if (command == "clipboard_paste_progress")
+        {
+            size_t sep1 = param.find('|');
+            size_t sep2 = sep1 != std::string::npos ? param.find('|', sep1 + 1) : std::string::npos;
+            if (sep1 != std::string::npos)
+            {
+                pastePlacedCubes = ::atoi(param.substr(0, sep1).c_str());
+                pasteTotalCubes  = ::atoi(param.substr(sep1 + 1, sep2 - sep1 - 1).c_str());
+            }
+            if (sep2 != std::string::npos)
+                pasteEtaSeconds = ::atof(param.substr(sep2 + 1).c_str());
+            isPasteBuilding = true;
+        }
+        else if (command == "clipboard_paste_done")
+        {
+            isPasteBuilding  = false;
+            pastePlacedCubes = 0;
+            pasteTotalCubes  = 0;
+            pasteEtaSeconds  = -1.0f;
         }
         else if (command == "clipboard_preview_paste_model")
         {
@@ -155,6 +193,52 @@ namespace pipe {
         {
             GameInfo::SetData(param);
         }
+        else if (command == "history_add")
+        {
+            History::Add(param);
+        }
+        else if (command == "history_transform")
+        {
+            // Format: id|oldX|oldY|oldZ|newX|newY|newZ
+            auto nextF = [](std::string& s) -> std::string {
+                size_t p = s.find('|');
+                if (p == std::string::npos) { std::string v = s; s.clear(); return v; }
+                std::string v = s.substr(0, p); s = s.substr(p + 1); return v;
+            };
+            std::string rest = param;
+            std::string id = nextF(rest);
+            float oldX = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float oldY = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float oldZ = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float newX = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float newY = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float newZ = rest.empty() ? 0.f : std::stof(rest);
+            History::AddTransform(id, oldX, oldY, oldZ, newX, newY, newZ);
+        }
+        else if (command == "history_rotation")
+        {
+            // Format: id|oldQx|oldQy|oldQz|oldQw|newQx|newQy|newQz|newQw
+            auto nextF = [](std::string& s) -> std::string {
+                size_t p = s.find('|');
+                if (p == std::string::npos) { std::string v = s; s.clear(); return v; }
+                std::string v = s.substr(0, p); s = s.substr(p + 1); return v;
+            };
+            std::string rest = param;
+            std::string id = nextF(rest);
+            float oldQx = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float oldQy = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float oldQz = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float oldQw = rest.empty() ? 1.f : std::stof(nextF(rest));
+            float newQx = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float newQy = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float newQz = rest.empty() ? 0.f : std::stof(nextF(rest));
+            float newQw = rest.empty() ? 1.f : std::stof(rest);
+            History::AddRotation(id, oldQx, oldQy, oldQz, oldQw, newQx, newQy, newQz, newQw);
+        }
+        else if (command == "inventory_clear")
+        {
+            Inventory::Clear();
+        }
         else if (command == "inventory_item")
         {
             // Format: id|name|typeId|categoryId|categoryName|resellable|priceGold|purchased|authorProfileId|slotPosition|description
@@ -182,6 +266,10 @@ namespace pipe {
             item.description    = rest;
 
             Inventory::AddItem(item);
+        }
+        else if (command == "camera_mode_unavailable")
+        {
+            CameraPanel::ResetModeSelection();
         }
     }
 

@@ -125,5 +125,57 @@
 
     "Inventory": "Ekwipunek",
     "Items": "Przedmioty",
-    "No items": "Brak przedmiotów"
+    "No items": "Brak przedmiotów",
+
+    "History": "Historia",
+    "Undo": "Cofnij",
+    "Redo": "Przywróć",
+    "No actions": "Brak akcji",
+
+    "Nothing selected": "Nic nie zaznaczono",
+    "Object": "Obiekt",
+    "Remove": "Usuń",
+    "Teleport to": "Teleportuj do",
+    "Add to Inventory": "Dodaj do ekwipunku",
+    "Item": "Przedmiot",
+    "Item ID": "ID przedmiotu",
+    "Type ID": "ID typu",
+    "Category": "Kategoria",
+    "Category ID": "ID kategorii",
+    "Slot": "Slot",
+    "Resellable": "Odsprzedawalny",
+    "Yes": "Tak",
+    "No": "Nie",
+    "Price": "Cena",
+    "Purchased": "Zakupiony",
+    "Author ID": "ID autora",
+    "Description": "Opis",
+    "Remove from Inventory": "Usuń z ekwipunku",
+    "Time left: %s": "Pozostały czas: %s",
+
+    "Cubes": "Kostki",
+    "Save .kscubes": "Zapisz .kscubes",
+    "Load .kscubes": "Wczytaj .kscubes",
+    "Mirror": "Lustro",
+
+    "Rename": "Zmień nazwę",
+
+    "Rotate with RMB": "Obracaj PPM",
+
+    "Players": "Gracze",
+    "No players online": "Brak graczy online",
+    "Teleport": "Teleportuj",
+
+    "No inventory loaded. Refresh inventory first.": "Ekwipunek nie został załadowany. Najpierw odśwież ekwipunek.",
+    "Remove All Items in Category": "Usuń wszystkie przedmioty z kategorii",
+    "Are you sure? This cannot be undone!": "Czy jesteś pewny? Tej operacji nie można cofnąć!",
+    "Confirm Remove": "Potwierdź usunięcie",
+
+    "Refresh Packs": "Odśwież paczki",
+    "Load": "Załaduj",
+
+    "Zoom": "Przybliżenie",
+
+    "Camera Mode": "Tryb kamery",
+    "Default": "Domyślny"
 }

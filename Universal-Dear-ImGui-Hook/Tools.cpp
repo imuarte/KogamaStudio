@@ -28,7 +28,13 @@ namespace Tools {
 
 
 
-    void Render(){
+    void Render()
+    {
+        if (!ImGui::Begin((std::string(T(u8"Tools")) + u8"###Tools").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
+        {
+            ImGui::End();
+            return;
+        }
 
         // no build limit
         if (ImGui::Checkbox(T(u8"No Build Limit"), &NoBuildLimit)) {
@@ -153,6 +159,10 @@ namespace Tools {
             }
         }
 
+        if (ImGui::Button("Test")) {
+            SendCommand("test");
+        }
 
+        ImGui::End();
     }
 }

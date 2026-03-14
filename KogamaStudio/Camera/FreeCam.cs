@@ -13,6 +13,7 @@ public static class Freecam
     private static float _targetPitch;
     public static float Speed = 20f;
     public static float Sensitivity = 2f;
+    public static bool RequireRightClick = true;
     public static Vector3 Position;
     public static Quaternion Rotation;
 
@@ -49,9 +50,12 @@ public static class Freecam
         if (Input.GetKey(KeyCode.Space)) Position += Vector3.up * speed;
         if (Input.GetKey(KeyCode.C)) Position += Vector3.down * speed;
 
-        _targetYaw   += Input.GetAxis("Mouse X") * Sensitivity;
-        _targetPitch -= Input.GetAxis("Mouse Y") * Sensitivity;
-        _targetPitch  = Mathf.Clamp(_targetPitch, -90f, 90f);
+        if (!RequireRightClick || Input.GetMouseButton(1))
+        {
+            _targetYaw   += Input.GetAxis("Mouse X") * Sensitivity;
+            _targetPitch -= Input.GetAxis("Mouse Y") * Sensitivity;
+            _targetPitch  = Mathf.Clamp(_targetPitch, -90f, 90f);
+        }
 
         float smooth = Time.deltaTime * 20f;
         _yaw   = Mathf.LerpAngle(_yaw, _targetYaw, smooth);

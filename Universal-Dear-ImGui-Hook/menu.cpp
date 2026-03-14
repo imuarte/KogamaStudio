@@ -8,7 +8,6 @@
 #include <filesystem>
 #include "Tools.h"
 #include "ResourcePacks.h"
-#include "Generate.h"
 #include "About.h"
 #include "Translate.h"
 #include "Properties.h"
@@ -21,7 +20,7 @@
 #include "Explorer.h"
 #include "GameInfo.h"
 #include "Inventory.h"
-#include "ItemProperties.h"
+#include "History.h"
 
 namespace menu {
     bool isOpen = false;
@@ -126,21 +125,23 @@ namespace menu {
             ImGuiID dockRightMid, dockRightBottom;
             ImGui::DockBuilderSplitNode(dockRightBot, ImGuiDir_Down, 0.5f, &dockRightBottom, &dockRightMid);
 
-            ImGui::DockBuilderDockWindow(u8"###Viewport",       dockLeft);
-            ImGui::DockBuilderDockWindow(u8"###Tools",          dockRightTop);
-            ImGui::DockBuilderDockWindow(u8"###Properties",     dockRightMid);
-            ImGui::DockBuilderDockWindow(u8"###Clipboard",      dockRightMid);
-            ImGui::DockBuilderDockWindow(u8"###Generate",       dockRightBottom);
-            ImGui::DockBuilderDockWindow(u8"###ResourcePacks",  dockRightBottom);
-            ImGui::DockBuilderDockWindow(u8"###Translate",      dockRightBottom);
-            ImGui::DockBuilderDockWindow(u8"###About",          dockRightBottom);
-            ImGui::DockBuilderDockWindow(u8"###Console",        dockRightBottom);
-            ImGui::DockBuilderDockWindow(u8"###Players",        dockRightBottom);
-            ImGui::DockBuilderDockWindow(u8"###Camera",         dockRightBottom);
-            ImGui::DockBuilderDockWindow(u8"###Explorer",       dockRightTop);
-            ImGui::DockBuilderDockWindow(u8"###GameInfo",       dockRightBottom);
-            ImGui::DockBuilderDockWindow(u8"###Inventory",       dockRightBottom);
-            ImGui::DockBuilderDockWindow(u8"###ItemProperties",  dockRightMid);
+            ImGui::DockBuilderDockWindow(u8"###Viewport",      dockLeft);
+            // right top: explorer + tools
+            ImGui::DockBuilderDockWindow(u8"###Explorer",      dockRightTop);
+            ImGui::DockBuilderDockWindow(u8"###Tools",         dockRightTop);
+            // right mid: properties + clipboard + history
+            ImGui::DockBuilderDockWindow(u8"###Properties",    dockRightMid);
+            ImGui::DockBuilderDockWindow(u8"###Clipboard",     dockRightMid);
+            ImGui::DockBuilderDockWindow(u8"###History",       dockRightMid);
+            // right bottom: secondary panels
+            ImGui::DockBuilderDockWindow(u8"###GameInfo",      dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###Inventory",     dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###Players",       dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###Camera",        dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###ResourcePacks", dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###Translate",     dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###About",         dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###Console",       dockRightBottom);
             ImGui::DockBuilderFinish(dockId);
         }
 
@@ -173,6 +174,12 @@ namespace menu {
                     viewportHovered = ImGui::IsItemHovered();
                     viewportImageMin = ImGui::GetItemRectMin();
                     viewportImageMax = ImGui::GetItemRectMax();
+                    if (ImGui::BeginDragDropTarget())
+                    {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(u8"INVENTORY_ITEM"))
+                            SendCommand((std::string(u8"world_place_item|") + (const char*)payload->Data).c_str());
+                        ImGui::EndDragDropTarget();
+                    }
                 }
                 else
                 {
@@ -185,36 +192,21 @@ namespace menu {
         ImGui::End();
         ImGui::PopStyleVar();
 
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-
-        if (ImGui::Begin((std::string(T(u8"Tools")) + u8"###Tools").c_str(), nullptr, flags))
-            Tools::Render();
-        ImGui::End();
-
-        if (ImGui::Begin((std::string(T(u8"Generate")) + u8"###Generate").c_str(), nullptr, flags))
-            Generate::Render();
-        ImGui::End();
-
-        if (ImGui::Begin((std::string(T(u8"Resource Packs")) + u8"###ResourcePacks").c_str(), nullptr, flags))
-            ResourcePacks::Render();
-        ImGui::End();
-
-        if (ImGui::Begin((std::string(T(u8"Translate")) + u8"###Translate").c_str(), nullptr, flags))
-            Translate::Render();
-        ImGui::End();
-
-        if (ImGui::Begin((std::string(T(u8"About")) + u8"###About").c_str(), nullptr, flags))
-            About::Render();
-        ImGui::End();
+        // --- Main panels (all manage their own Begin/End) ---
+        Explorer::Render();
+        Tools::Render();
 
         Properties::Render();
         Clipboard::Render();
-        Players::Render();
-        CameraPanel::Render();
-        Explorer::Render();
+        History::Render();
+
         GameInfo::Render();
         Inventory::Render();
-        ItemProperties::Render();
+        Players::Render();
+        CameraPanel::Render();
+        ResourcePacks::Render();
+        Translate::Render();
+        About::Render();
 
         if (ImGui::BeginMainMenuBar())
         {

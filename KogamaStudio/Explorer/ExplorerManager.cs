@@ -62,8 +62,9 @@ internal static class ExplorerManager
             var type = wo.type.ToString();
             meta.TryGetValue(kvp.Key, out var m);
 
+            bool hasMeta = m != null && !string.IsNullOrEmpty(m.Name);
             string name;
-            if (m != null && !string.IsNullOrEmpty(m.Name))
+            if (hasMeta)
             {
                 name = m.Name;
             }
@@ -74,7 +75,7 @@ internal static class ExplorerManager
                 name = count == 0 ? type : $"{type} {count}";
             }
 
-            entries.Add(new { id = kvp.Key, type, name });
+            entries.Add(new { id = kvp.Key, type, name, itemId = hasMeta ? -1 : (int)wo.ItemId });
         }
 
         try

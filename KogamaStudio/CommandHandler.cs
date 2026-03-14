@@ -92,6 +92,20 @@ new System.Collections.Generic.Queue<(int id, string text)>();
         Task.Run(() => Listen());
     }
 
+    public static void RefreshInventory()
+    {
+        var shopRepo = MVGameControllerBase.EditModeUI?.Cast<DesktopEditModeController>()?.PlayerShopInventoryRepository;
+        if (shopRepo?.InventoryCategories == null) return;
+        foreach (var kvp in shopRepo.InventoryCategories)
+        {
+            var catName = kvp.Value?.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ").Trim() ?? "";
+            var items = shopRepo.GetInventoryItemsInCategorySlow(kvp.Value);
+            if (items == null) continue;
+            foreach (var item in items)
+                PipeClient.SendCommand($"inventory_item|{item.itemID}|{item.name ?? ""}|{item.itemTypeID}|{(int)kvp.Key}|{catName}|{item.resellable}|{item.priceGold}|{item.purchased}|{item.authorProfileID}|{item.slotPosition}|{item.description ?? ""}");
+        }
+    }
+
     private static void Listen()
     {
         try
@@ -117,11 +131,13 @@ new System.Collections.Generic.Queue<(int id, string text)>();
 
     private static void ProcessCommand(string cmd)
     {
-        string[] parts = cmd.Split('|');
-        string command = parts[0];
-
-        MelonCoroutines.Start(ExecuteCommand(command, parts.Length > 1 ? parts[1] : ""));
+        int sep = cmd.IndexOf('|');
+        string command = sep >= 0 ? cmd[..sep] : cmd;
+        string param = sep >= 0 ? cmd[(sep + 1)..] : "";
+        MelonCoroutines.Start(ExecuteCommand(command, param));
     }
+
+    public static int RootGroupId => MVGameControllerBase.WOCM?.RootGroup?.Id ?? -1;
 
     public static CursorLockMode previousLockState = CursorLockMode.None;
     public static int targetWoId = -1;
@@ -255,10 +271,30 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                 case "explorer_refresh":
                     ExplorerManager.Refresh();
                     break;
+                case "explorer_rename":
+                {
+                    var sep = param.IndexOf('|');
+                    if (sep < 0) break;
+                    if (!int.TryParse(param[..sep], out int renameId)) break;
+                    string newName = param[(sep + 1)..];
+                    int planetID = GameInfo.PlanetID;
+                    if (planetID == -1) break;
+                    var metaPath = ExplorerManager.GetMetaFilePath(planetID);
+                    var meta = new System.Collections.Generic.Dictionary<int, ObjectMetaEntry>();
+                    if (File.Exists(metaPath))
+                        try { meta = JsonConvert.DeserializeObject<System.Collections.Generic.Dictionary<int, ObjectMetaEntry>>(File.ReadAllText(metaPath)) ?? meta; } catch { }
+                    if (string.IsNullOrEmpty(newName)) meta.Remove(renameId);
+                    else meta[renameId] = new ObjectMetaEntry { Name = newName };
+                    File.WriteAllText(metaPath, JsonConvert.SerializeObject(meta));
+                    break;
+                }
                 case "explorer_select":
                     targetWoId = int.Parse(param);
                     if (Objects.WOIdGetter.Instance != null)
+                    {
+                        Objects.WOIdGetter.Instance.ExitGroupToRoot();
                         Objects.WOIdGetter.Instance.SelectWO(targetWoId);
+                    }
                     else
                         PropertiesManager.SendProperties(targetWoId);
                     break;
@@ -273,6 +309,26 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 case "camera_freecam_sensitivity":
                     Freecam.Sensitivity = float.Parse(param);
+                    break;
+                case "camera_freecam_require_rmb":
+                    Freecam.RequireRightClick = param == "true";
+                    break;
+                case "camera_set_mode":
+                    if (int.TryParse(param, out int modeId))
+                    {
+                        var camMgr = MVGameControllerBase.MainCameraManager;
+                        if (camMgr?.cameraController != null)
+                            try
+                            {
+                                camMgr.cameraController.SetCamera((Il2Cpp.CameraType)modeId);
+                                CameraModeModifier.Mode = (Il2Cpp.CameraType)modeId;
+                                CameraModeModifier.Enabled = true;
+                            }
+                            catch (Exception) { PipeClient.SendCommand("camera_mode_unavailable"); }
+                    }
+                    break;
+                case "camera_mode_reset":
+                    CameraModeModifier.Enabled = false;
                     break;
                 // TRANSLATOR
                 // translate own messages
@@ -310,6 +366,29 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
 
                 // PROPERTIES
+                case "history_restore_position":
+                {
+                    var p = param.Split('|');
+                    if (p.Length < 4 || !int.TryParse(p[0], out int restoreId)) break;
+                    var inv = System.Globalization.CultureInfo.InvariantCulture;
+                    float rx = float.Parse(p[1], inv);
+                    float ry = float.Parse(p[2], inv);
+                    float rz = float.Parse(p[3], inv);
+                    WorldObjectOperations.SetPosition(restoreId, new Vector3(rx, ry, rz));
+                    break;
+                }
+                case "history_restore_rotation":
+                {
+                    var p = param.Split('|');
+                    if (p.Length < 5 || !int.TryParse(p[0], out int restoreId)) break;
+                    var inv = System.Globalization.CultureInfo.InvariantCulture;
+                    float qx = float.Parse(p[1], inv);
+                    float qy = float.Parse(p[2], inv);
+                    float qz = float.Parse(p[3], inv);
+                    float qw = float.Parse(p[4], inv);
+                    WorldObjectOperations.SetRotation(restoreId, new Quaternion(qx, qy, qz, qw));
+                    break;
+                }
                 case "properties_remove":
                     HandleRemove(PropertiesManager.SelectedWOId);
                     break;
@@ -353,11 +432,19 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     WorldObjectOperations.SetRotation(PropertiesManager.SelectedWOId, Quaternion.Euler(currentEulerAngles));
                     break;
                 // CLIPBOARD
+                case "clipboard_clear":
+                    Clipboard.ClipboardManager.Clear();
+                    break;
                 case "clipboard_copy_model":
                     Clipboard.ClipboardManager.CopyPropertiesModel();
                     break;
+                case "clipboard_save_to_file":
+                    Clipboard.ClipboardManager.SaveToFile(param);
+                    break;
+                case "clipboard_load_from_file":
+                    Clipboard.ClipboardManager.LoadFromFile(param);
+                    break;
                 case "clipboard_paste_model":
-                    ClipboardManager.Preview = false;
                     Clipboard.ClipboardManager.PasteEditedModel();
                     break;
                 // editor
@@ -418,20 +505,8 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     Clipboard.ClipboardManager.Preview = param == "true";
                     break;
                 case "inventory_refresh":
-                {
-                    var shopRepo = MVGameControllerBase.EditModeUI?.Cast<DesktopEditModeController>()?.PlayerShopInventoryRepository;
-                    if (shopRepo?.InventoryCategories != null)
-                        foreach (var kvp in shopRepo.InventoryCategories)
-                        {
-                            var catName = kvp.Value?.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ").Trim() ?? "";
-                            MelonLogger.Msg($"[Inventory] Category: '{catName}' (raw: '{kvp.Value?.Replace("\r", "\\r").Replace("\n", "\\n")}') key={kvp.Key}");
-                            var items = shopRepo.GetInventoryItemsInCategorySlow(kvp.Value);
-                            if (items == null) continue;
-                            foreach (var item in items)
-                                PipeClient.SendCommand($"inventory_item|{item.itemID}|{item.name ?? ""}|{item.itemTypeID}|{(int)kvp.Key}|{catName}|{item.resellable}|{item.priceGold}|{item.purchased}|{item.authorProfileID}|{item.slotPosition}|{item.description ?? ""}");
-                        }
+                    RefreshInventory();
                     break;
-                }
                 case "inventory_remove":
                 {
                     if (int.TryParse(param, out int removeId))
@@ -442,6 +517,17 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                 {
                     if (int.TryParse(param, out int woId))
                         InventoryManager.AddItem(woId);
+                    break;
+                }
+                case "world_place_item":
+                {
+                    if (!int.TryParse(param, out int placeItemId)) break;
+                    KogamaStudio.RunOnMainThread(() =>
+                    {
+                        var cam = MVGameControllerBase.MainCameraManager?.MainCamera;
+                        var pos = cam != null ? cam.transform.position + cam.transform.forward * 5f : UnityEngine.Vector3.zero;
+                        MVGameControllerBase.OperationRequests.AddItemToWorld(placeItemId, RootGroupId, pos, UnityEngine.Quaternion.identity, true, true, false);
+                    });
                     break;
                 }
                 case "recovery_disable_loading_screen":
@@ -495,6 +581,13 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                 case "camera_fov_reset":
                     FovModifier.Enabled = false;
                     break;
+                case "camera_zoom":
+                    ZoomModifier.Enabled = true;
+                    ZoomModifier.ZoomLevel = float.Parse(param, System.Globalization.CultureInfo.InvariantCulture);
+                    break;
+                case "camera_zoom_reset":
+                    ZoomModifier.Enabled = false;
+                    break;
                 case "set_resolution":
                 {
                     var dims = param.Split('x');
@@ -512,6 +605,14 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                 case "camera_distance_reset":
                     CameraDistanceModifier.distance = CameraDistanceModifier.defaultDistance;
                     CameraDistanceModifier.ApplyChanges();
+                    break;
+                case "test":
+                    System.Action<string> managedAction = (error) => {
+                        MelonLogger.Msg("Error: " + error);
+                    };
+                    MVGameControllerBase.OperationRequests.PublishPlanet(
+                        DelegateSupport.ConvertDelegate<Il2CppSystem.Action<string>>(managedAction)
+                    );
                     break;
 
                 default:
