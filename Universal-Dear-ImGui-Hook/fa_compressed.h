@@ -1,5 +1,5 @@
-// File: 'c:\Users\mexav\AppData\Local\KogamaStudio\fa-solid-900.ttf' (426112 bytes)
-// Exported using binary_to_compressed_c.exe -base85 "c:\Users\mexav\AppData\Local\KogamaStudio\fa-solid-900.ttf" FA_Solid
+// File: fa-solid-900.ttf (426112 bytes)
+// Exported using binary_to_compressed_c.exe -base85 fa-solid-900.ttf FA_Solid
 static const char FA_Solid_compressed_data_base85[308580+1] =
     "7])#######*kK<L'/###[),##-`($#Q6>##kZn42/E`XBx,>>#@tkU%'vA0FI.AI[7s###Y,'##:VPkE-##,^3a&##TtXV$`L@UCiNOBYu^]w0vVp-$f'TqLR^xc;_7I_&XUr-$E3n0F"
     "pt#$><V-R<1j'##Ve$iF/JV?P<;'##0e_w'aM[=BNi.sQQ3i--RJm92/(NDFtxlHGK1C3#n4N7#/c#<GVM05NNs'6#b5h5#p>#BM^YS8%l/`=g>=rs'alVP&S9w0#lBIqD5H7Q/#q%M^"

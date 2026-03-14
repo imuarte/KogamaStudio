@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include <shlobj.h>
+#include <string>
 #include "pipe.h"
 #include "Appearance.h"
 #include "IconsFontAwesome6.h"
@@ -139,12 +141,14 @@ namespace hooks_dx11 {
 
                 // Merge FA6 icons into the main font
                 {
+                    char localAppData[MAX_PATH] = {};
+                    SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, localAppData);
+                    std::string faPath = std::string(localAppData) + "\\KogamaStudio\\Fonts\\fa-solid-900.ttf";
                     ImFontConfig cfg;
                     cfg.MergeMode  = true;
                     cfg.PixelSnapH = true;
                     static const ImWchar ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-                    const char* faPath = "C:\\Users\\mexav\\AppData\\Local\\KogamaStudio\\Fonts\\fa-solid-900.ttf";
-                    io.Fonts->AddFontFromFileTTF(faPath,
+                    io.Fonts->AddFontFromFileTTF(faPath.c_str(),
                         Appearance::fontSize > 0 ? Appearance::fontSize : 13.0f,
                         &cfg, ranges);
                 }
