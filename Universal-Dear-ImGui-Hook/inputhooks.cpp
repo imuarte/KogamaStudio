@@ -16,6 +16,32 @@ namespace inputhook {
     typedef BOOL(WINAPI* GetCursorPosFn)(LPPOINT);
     static GetCursorPosFn oGetCursorPos = nullptr;
 
+    typedef SHORT(WINAPI* GetAsyncKeyStateFn)(int);
+    static GetAsyncKeyStateFn oGetAsyncKeyState = nullptr;
+
+    typedef SHORT(WINAPI* GetKeyStateFn)(int);
+    static GetKeyStateFn oGetKeyState = nullptr;
+
+    static bool ShouldBlockMouseButton(int vKey)
+    {
+        return (vKey == VK_LBUTTON || vKey == VK_RBUTTON || vKey == VK_MBUTTON)
+            && menu::isOpen && pipe::openMenu && menu::blockMouseInput;
+    }
+
+    static SHORT WINAPI hookGetAsyncKeyState(int vKey)
+    {
+        if (ShouldBlockMouseButton(vKey))
+            return 0;
+        return oGetAsyncKeyState(vKey);
+    }
+
+    static SHORT WINAPI hookGetKeyState(int vKey)
+    {
+        if (ShouldBlockMouseButton(vKey))
+            return 0;
+        return oGetKeyState(vKey);
+    }
+
     static POINT sCachedRemappedPt = {};
     static bool  sCachedValid = false;
 
@@ -67,22 +93,56 @@ namespace inputhook {
 
     void InitGetCursorPosHook()
     {
-        void* fn = GetProcAddress(GetModuleHandleA("user32.dll"), "GetCursorPos");
+        HMODULE user32 = GetModuleHandleA("user32.dll");
+
+        void* fn = GetProcAddress(user32, "GetCursorPos");
         if (fn)
         {
             MH_CreateHook(fn, hookGetCursorPos, reinterpret_cast<void**>(&oGetCursorPos));
             MH_EnableHook(fn);
         }
+
+        void* fnAKS = GetProcAddress(user32, "GetAsyncKeyState");
+        if (fnAKS)
+        {
+            MH_CreateHook(fnAKS, hookGetAsyncKeyState, reinterpret_cast<void**>(&oGetAsyncKeyState));
+            MH_EnableHook(fnAKS);
+        }
+
+        void* fnKS = GetProcAddress(user32, "GetKeyState");
+        if (fnKS)
+        {
+            MH_CreateHook(fnKS, hookGetKeyState, reinterpret_cast<void**>(&oGetKeyState));
+            MH_EnableHook(fnKS);
+        }
     }
 
     void RemoveGetCursorPosHook()
     {
-        void* fn = GetProcAddress(GetModuleHandleA("user32.dll"), "GetCursorPos");
+        HMODULE user32 = GetModuleHandleA("user32.dll");
+
+        void* fn = GetProcAddress(user32, "GetCursorPos");
         if (fn)
         {
             MH_DisableHook(fn);
             MH_RemoveHook(fn);
             oGetCursorPos = nullptr;
+        }
+
+        void* fnAKS = GetProcAddress(user32, "GetAsyncKeyState");
+        if (fnAKS)
+        {
+            MH_DisableHook(fnAKS);
+            MH_RemoveHook(fnAKS);
+            oGetAsyncKeyState = nullptr;
+        }
+
+        void* fnKS = GetProcAddress(user32, "GetKeyState");
+        if (fnKS)
+        {
+            MH_DisableHook(fnKS);
+            MH_RemoveHook(fnKS);
+            oGetKeyState = nullptr;
         }
     }
 
@@ -126,17 +186,29 @@ namespace inputhook {
                 if (pipe::cursorVisible)
                 {
                     POINT pt;
-                    bool blocked = true;
+                    bool inViewport = false;
                     if (oGetCursorPos && oGetCursorPos(&pt))
                     {
                         float imgW = menu::viewportImageMax.x - menu::viewportImageMin.x;
                         float imgH = menu::viewportImageMax.y - menu::viewportImageMin.y;
-                        blocked = !(imgW > 0.0f && imgH > 0.0f &&
+                        inViewport = imgW > 0.0f && imgH > 0.0f &&
                             pt.x >= (LONG)menu::viewportImageMin.x && pt.x <= (LONG)menu::viewportImageMax.x &&
-                            pt.y >= (LONG)menu::viewportImageMin.y && pt.y <= (LONG)menu::viewportImageMax.y);
+                            pt.y >= (LONG)menu::viewportImageMin.y && pt.y <= (LONG)menu::viewportImageMax.y;
                     }
-                    if (blocked)
+                    if (!inViewport)
                         return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+
+                    // In viewport but ImGui has a window here — block mouse button raw events
+                    if (io.WantCaptureMouse)
+                    {
+                        UINT sz = sizeof(RAWINPUT);
+                        RAWINPUT ri{};
+                        if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &ri, &sz, sizeof(RAWINPUTHEADER)) != (UINT)-1)
+                        {
+                            if (ri.header.dwType == RIM_TYPEMOUSE && ri.data.mouse.usButtonFlags != 0)
+                                return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+                        }
+                    }
                 }
             }
 
@@ -160,6 +232,15 @@ namespace inputhook {
 
                 if (inViewport)
                 {
+                    // Block clicks when an ImGui window sits over the viewport
+                    if (io.WantCaptureMouse &&
+                        (uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP   ||
+                         uMsg == WM_RBUTTONDOWN || uMsg == WM_RBUTTONUP   ||
+                         uMsg == WM_MBUTTONDOWN || uMsg == WM_MBUTTONUP   ||
+                         uMsg == WM_LBUTTONDBLCLK || uMsg == WM_RBUTTONDBLCLK ||
+                         uMsg == WM_MOUSEWHEEL  || uMsg == WM_MOUSEHWHEEL))
+                        return TRUE;
+
                     float relX = max(0.0f, min(1.0f, (screenX - menu::viewportImageMin.x) / imgW));
                     float relY = max(0.0f, min(1.0f, (screenY - (menu::viewportImageMin.y + GetViewportOffsetY())) / imgH));
                     RECT clientRect;

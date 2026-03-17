@@ -236,7 +236,8 @@ namespace hooks_dx11 {
 
             menu::Init();
 
-            io.WantCaptureMouse = ImGui::IsAnyItemHovered() && !menu::viewportHovered;
+            menu::blockMouseInput = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !menu::viewportHovered;
+            io.WantCaptureMouse   = menu::blockMouseInput;
 
 
 
@@ -377,6 +378,7 @@ namespace hooks_dx11 {
 
         if (gInitialized)
         {
+            ImGui::DestroyPlatformWindows();
             ImGui_ImplDX11_Shutdown();
             ImGui_ImplWin32_Shutdown();
             ImGui::DestroyContext();

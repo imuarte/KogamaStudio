@@ -15,6 +15,9 @@ internal class ObjectEntry
     [JsonProperty("type")]    public string type    = "";
     [JsonProperty("itemId")]  public int    itemId  = -1;
     [JsonProperty("groupId")] public int    groupId = -1;
+    [JsonProperty("x")]       public float  x;
+    [JsonProperty("y")]       public float  y;
+    [JsonProperty("z")]       public float  z;
 }
 
 internal static class ExplorerManager
@@ -129,7 +132,7 @@ internal static class ExplorerManager
         if (planetID == -1) return;
 
         var list = Read(planetID);
-        list.Sort((a, b) => a.order.CompareTo(b.order));
+        list.Sort((a, b) => { int c = a.order.CompareTo(b.order); return c != 0 ? c : a.id.CompareTo(b.id); });
 
         var liveIds = new HashSet<int>();
         foreach (var kvp in wocm.worldObjects)
@@ -138,17 +141,22 @@ internal static class ExplorerManager
         if (_loadComplete)
             list.RemoveAll(e => !liveIds.Contains(e.id));
 
+        for (int i = 0; i < list.Count; i++) list[i].order = i;
+
         foreach (var e in list)
         {
             var wo = wocm.GetWorldObjectClient(e.id);
-            if (wo != null) e.groupId = wo.GroupId;
+            if (wo == null) continue;
+            e.groupId = wo.GroupId;
+            var pos = wo.transform?.position ?? UnityEngine.Vector3.zero;
+            e.x = pos.x; e.y = pos.y; e.z = pos.z;
         }
 
         var savedIds   = new HashSet<int>(list.Select(e => e.id));
         var typeCounts = new Dictionary<string, int>();
         foreach (var e in list) { typeCounts.TryGetValue(e.type, out int c); typeCounts[e.type] = c + 1; }
 
-        int nextOrder  = list.Count > 0 ? list.Max(e => e.order) + 1 : 0;
+        int nextOrder  = list.Count;
         var newEntries = new List<ObjectEntry>();
         foreach (var kvp in wocm.worldObjects)
         {
@@ -157,13 +165,15 @@ internal static class ExplorerManager
             var type = wo.type.ToString();
             typeCounts.TryGetValue(type, out int count);
             typeCounts[type] = count + 1;
+            var pos = wo.transform?.position ?? UnityEngine.Vector3.zero;
             newEntries.Add(new ObjectEntry
             {
                 id      = kvp.Key,
                 type    = type,
                 name    = count == 0 ? type : $"{type} {count}",
                 itemId  = (int)wo.ItemId,
-                groupId = wo.GroupId
+                groupId = wo.GroupId,
+                x = pos.x, y = pos.y, z = pos.z
             });
         }
         newEntries.Sort((a, b) => a.id.CompareTo(b.id));

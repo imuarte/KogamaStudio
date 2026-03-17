@@ -477,16 +477,41 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 case "explorer_create_group":
                 {
+                    // format: groupId|posX|posY|posZ|rotX|rotY|rotZ|scaleX|scaleY|scaleZ|localOwner
+                    var p = param.Split('|');
+                    float F(int i, float def = 0f) => p.Length > i && float.TryParse(p[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v) ? v : def;
+                    int groupId = p.Length > 0 && int.TryParse(p[0], out int g) ? g : EditorStateMachine.ParentGroupID;
+                    var pos   = new UnityEngine.Vector3(F(1), F(2), F(3));
+                    var rot   = UnityEngine.Quaternion.Euler(F(4), F(5), F(6));
+                    var scale = new UnityEngine.Vector3(F(7, 1f), F(8, 1f), F(9, 1f));
+                    bool lo   = p.Length > 10 && p[10] == "1";
                     MVGameControllerBase.OperationRequests.RequestBuiltInItem(
-                        BuiltInItem.Group,
-                        EditorStateMachine.ParentGroupID,
+                        BuiltInItem.Group, groupId,
                         new Il2CppSystem.Collections.Generic.Dictionary<Il2CppSystem.Object, Il2CppSystem.Object>(),
-                        UnityEngine.Vector3.zero,
-                        UnityEngine.Quaternion.identity,
-                        UnityEngine.Vector3.one,
-                        false,
-                        true
-                    );
+                        pos, rot, scale, lo, true);
+                    break;
+                }
+                case "explorer_create_cubemodel":
+                {
+                    // format: posX|posY|posZ|rotX|rotY|rotZ|scale|materialId
+                    // Always uses root group (like the game's own OnAddNewPrototype)
+                    var p = param.Split('|');
+                    float F(int i, float def = 0f) => p.Length > i && float.TryParse(p[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v) ? v : def;
+                    var pos   = new UnityEngine.Vector3(F(0), F(1), F(2));
+                    var rot   = UnityEngine.Quaternion.Euler(F(3), F(4), F(5));
+                    float scale = F(6, 1f);
+                    int matId = p.Length > 7 && int.TryParse(p[7], out int m) ? m
+                                : (int)CubeModelingStateMachine.CurrentMaterialId;
+                    int profileId = MVGameControllerBase.Game?.LocalPlayer?.ProfileID
+                                    ?? GameInfo.ProfileID;
+                    int rootId = MVGameControllerBase.WOCM.RootGroup.Id;
+                    var customData = new Il2CppSystem.Collections.Generic.Dictionary<Il2CppSystem.Object, Il2CppSystem.Object>();
+                    customData.Add(BoxInt(1), BoxFloat(scale));
+                    customData.Add(BoxInt(2), BoxInt(matId));
+                    customData.Add(BoxInt(3), BoxInt(profileId));
+                    MVGameControllerBase.OperationRequests.RequestBuiltInItem(
+                        BuiltInItem.CubeModel, rootId, customData,
+                        pos, rot, UnityEngine.Vector3.one * scale, false, true);
                     break;
                 }
                 case "explorer_set_order":
@@ -883,5 +908,37 @@ new System.Collections.Generic.Queue<(int id, string text)>();
         {
             KogamaStudio.Log.LogError($"[ExecuteCommand] Error: {ex.Message}");
         }
+    }
+
+    private static IntPtr _int32Klass  = IntPtr.Zero;
+    private static IntPtr _singleKlass = IntPtr.Zero;
+
+    private static unsafe IntPtr FindKlass(ref IntPtr cache, string ns, string name)
+    {
+        if (cache != IntPtr.Zero) return cache;
+        IntPtr domain = IL2CPP.il2cpp_domain_get();
+        uint size = 0;
+        IntPtr* assemblies = IL2CPP.il2cpp_domain_get_assemblies(domain, ref size);
+        for (uint i = 0; i < size; i++)
+        {
+            IntPtr image = IL2CPP.il2cpp_assembly_get_image(assemblies[i]);
+            IntPtr klass = IL2CPP.il2cpp_class_from_name(image, ns, name);
+            if (klass != IntPtr.Zero) { cache = klass; return klass; }
+        }
+        return IntPtr.Zero;
+    }
+
+    private static unsafe Il2CppSystem.Object BoxInt(int value)
+    {
+        IntPtr klass = FindKlass(ref _int32Klass, "System", "Int32");
+        if (klass == IntPtr.Zero) return null;
+        return new Il2CppSystem.Object(IL2CPP.il2cpp_value_box(klass, (IntPtr)(&value)));
+    }
+
+    private static unsafe Il2CppSystem.Object BoxFloat(float value)
+    {
+        IntPtr klass = FindKlass(ref _singleKlass, "System", "Single");
+        if (klass == IntPtr.Zero) return null;
+        return new Il2CppSystem.Object(IL2CPP.il2cpp_value_box(klass, (IntPtr)(&value)));
     }
 }

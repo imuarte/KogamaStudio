@@ -28,6 +28,131 @@ namespace Explorer {
     static char renameBuf[256] = "";
     static bool renameFocused = false;
 
+    enum class SortMode { Custom = 0, Alpha = 1, Distance = 2 };
+    static SortMode sortMode = SortMode::Custom;
+    static bool     sortDesc = false;
+    static float    camX = 0.f, camY = 0.f, camZ = 0.f;
+    static float    addCubeScale = 1.0f;
+
+    // --- Creation modal state ---
+    static bool  createModalOpen  = false;
+    static int   createType       = 0;   // 0=Group, 1=CubeModel
+    static int   createParentId   = -1;
+    static float createPos[3]     = {0.f, 10.f, 0.f};
+    static float createRot[3]     = {0.f, 0.f, 0.f};
+    static float createScale[3]   = {1.f, 1.f, 1.f};
+    static float createCubeScale2 = 1.f;
+    static int   createMaterialId = 0;
+    static bool  createLocalOwner = false;
+
+    // Locale-safe float formatter
+    static std::string FF(float v)
+    {
+        char buf[32]; snprintf(buf, sizeof(buf), "%.6g", v);
+        for (char* p = buf; *p; ++p) if (*p == ',') *p = '.';
+        return buf;
+    }
+
+    static void OpenCreateModal(int type, int parentId)
+    {
+        createType     = type;
+        createParentId = parentId;
+        createPos[0]   = 0.f; createPos[1] = 10.f; createPos[2] = 0.f;
+        createRot[0]   = createRot[1] = createRot[2] = 0.f;
+        createScale[0] = createScale[1] = createScale[2] = 1.f;
+        createCubeScale2  = 1.f;
+        createMaterialId  = 0;
+        createLocalOwner  = false;
+        createModalOpen   = true;
+    }
+
+    static void RenderCreateModal()
+    {
+        if (!createModalOpen) return;
+        ImGui::SetNextWindowSize(ImVec2(340, 0), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        bool open = true;
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking;
+        const char* title = createType == 0 ? (ICON_FA_LAYER_GROUP u8" New Group###create_modal")
+                                            : (ICON_FA_CUBE        u8" New CubeModel###create_modal");
+        if (!ImGui::Begin(title, &open, flags))
+        {
+            ImGui::End();
+            if (!open) createModalOpen = false;
+            return;
+        }
+
+        // Parent group (Groups only — CubeModels are always created in root group)
+        if (createType == 0)
+        {
+            ImGui::Text(T(u8"Parent Group ID"));
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(90.f);
+            ImGui::InputInt(u8"##cpg", &createParentId);
+            if (createParentId >= 0)
+            {
+                const ObjectEntry* pg = FindById(std::to_string(createParentId));
+                if (pg) { ImGui::SameLine(); ImGui::TextDisabled("(%s)", pg->name.c_str()); }
+            }
+            ImGui::Separator();
+        }
+
+        ImGui::DragFloat3(T(u8"Position"),          createPos,   0.5f);
+        ImGui::DragFloat3(T(u8"Rotation (euler)"),  createRot,   1.f,  -360.f, 360.f);
+
+        if (createType == 0)
+        {
+            ImGui::DragFloat3(T(u8"Scale"), createScale, 0.01f, 0.01f, 100.f);
+            ImGui::Checkbox(T(u8"Local owner"), &createLocalOwner);
+        }
+        else
+        {
+            ImGui::DragFloat(T(u8"Scale##cs"), &createCubeScale2, 0.01f, 0.1f, 50.f);
+            ImGui::InputInt(T(u8"Material ID"), &createMaterialId);
+            if (createMaterialId < 0) createMaterialId = 0;
+            ImGui::TextDisabled(T(u8"(placed in root group, owned by server)"));
+        }
+
+        ImGui::Separator();
+        bool confirm = ImGui::Button(T(u8"Create"), ImVec2(150.f, 0));
+        ImGui::SameLine();
+        bool cancel  = ImGui::Button(T(u8"Cancel"), ImVec2(150.f, 0));
+
+        if (confirm)
+        {
+            char cmd[512];
+            int lo = createLocalOwner ? 1 : 0;
+            if (createType == 0)
+            {
+                snprintf(cmd, sizeof(cmd), "explorer_create_group|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%d",
+                    createParentId,
+                    FF(createPos[0]).c_str(), FF(createPos[1]).c_str(), FF(createPos[2]).c_str(),
+                    FF(createRot[0]).c_str(), FF(createRot[1]).c_str(), FF(createRot[2]).c_str(),
+                    FF(createScale[0]).c_str(), FF(createScale[1]).c_str(), FF(createScale[2]).c_str(), lo);
+            }
+            else
+            {
+                snprintf(cmd, sizeof(cmd), "explorer_create_cubemodel|%s|%s|%s|%s|%s|%s|%s|%d",
+                    FF(createPos[0]).c_str(), FF(createPos[1]).c_str(), FF(createPos[2]).c_str(),
+                    FF(createRot[0]).c_str(), FF(createRot[1]).c_str(), FF(createRot[2]).c_str(),
+                    FF(createCubeScale2).c_str(), createMaterialId);
+            }
+            SendCommand(cmd);
+            createModalOpen = false;
+        }
+        if (cancel) createModalOpen = false;
+
+        ImGui::End();
+    }
+
+    void SetCameraPos(float x, float y, float z) { camX = x; camY = y; camZ = z; }
+
+    static float DistSq(const ObjectEntry& e)
+    {
+        float dx = e.x - camX, dy = e.y - camY, dz = e.z - camZ;
+        return dx * dx + dy * dy + dz * dz;
+    }
+
     const std::set<std::string>& GetSelectedIds() { return selectedIds; }
     void DeselectAll() { selectedIds.clear(); selectedId.clear(); }
 
@@ -108,6 +233,9 @@ namespace Explorer {
             obj.type    = item.value("type", "");
             obj.itemId  = item.value("itemId", -1);
             obj.groupId = item.value("groupId", -1);
+            obj.x       = item.value("x", 0.f);
+            obj.y       = item.value("y", 0.f);
+            obj.z       = item.value("z", 0.f);
 
             if (obj.itemId >= 0)
             {
@@ -304,6 +432,11 @@ namespace Explorer {
                 renameFocused  = false;
                 strncpy_s(renameBuf, sizeof(renameBuf), label.c_str(), _TRUNCATE);
             }
+            ImGui::Separator();
+            if (ImGui::MenuItem(ICON_FA_LAYER_GROUP u8"  " T(u8"Add Group here")))
+                { OpenCreateModal(0, obj.groupId); ImGui::CloseCurrentPopup(); }
+            if (ImGui::MenuItem(ICON_FA_CUBE u8"  " T(u8"Add CubeModel here")))
+                { OpenCreateModal(1, obj.groupId); ImGui::CloseCurrentPopup(); }
             ImGui::EndPopup();
         }
     }
@@ -405,6 +538,14 @@ namespace Explorer {
                 renameFocused  = false;
                 strncpy_s(renameBuf, sizeof(renameBuf), label.c_str(), _TRUNCATE);
             }
+            ImGui::Separator();
+            int gid = std::stoi(obj.id);
+            if (ImGui::MenuItem(ICON_FA_LAYER_GROUP u8"  " T(u8"Add Group inside")))
+                { OpenCreateModal(0, gid); ImGui::CloseCurrentPopup(); }
+            if (ImGui::MenuItem(ICON_FA_LAYER_GROUP u8"  " T(u8"Add Group here")))
+                { OpenCreateModal(0, obj.groupId); ImGui::CloseCurrentPopup(); }
+            if (ImGui::MenuItem(ICON_FA_CUBE u8"  " T(u8"Add CubeModel")))
+                { OpenCreateModal(1, gid); ImGui::CloseCurrentPopup(); }
             ImGui::EndPopup();
         }
 
@@ -439,7 +580,46 @@ namespace Explorer {
 
         if (ImGui::Button(T(u8"Refresh"))) SendCommand(u8"explorer_refresh");
         ImGui::SameLine();
-        if (ImGui::Button(T(u8"New Group"))) SendCommand(u8"explorer_create_group");
+        if (ImGui::Button(u8"+" u8"##add_btn"))
+            ImGui::OpenPopup(u8"##add_type_popup");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(T(u8"Add object"));
+        if (ImGui::BeginPopup(u8"##add_type_popup"))
+        {
+            int targetId = rootGroupId;
+            if (!selectedId.empty())
+            {
+                const ObjectEntry* sel = FindById(selectedId);
+                if (sel && sel->type.find("Group") != std::string::npos)
+                    targetId = std::stoi(selectedId);
+                else if (sel)
+                    targetId = sel->groupId;
+            }
+            if (ImGui::MenuItem(ICON_FA_LAYER_GROUP u8"  Group"))
+                { OpenCreateModal(0, targetId); ImGui::CloseCurrentPopup(); }
+            if (ImGui::MenuItem(ICON_FA_CUBE u8"  CubeModel"))
+                { OpenCreateModal(1, targetId); ImGui::CloseCurrentPopup(); }
+            ImGui::EndPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_FILTER))
+            ImGui::OpenPopup(u8"##sort_popup");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(T(u8"Sort"));
+        if (ImGui::BeginPopup(u8"##sort_popup"))
+        {
+            ImGui::TextDisabled(T(u8"Sort by"));
+            ImGui::Separator();
+            if (ImGui::RadioButton(T(u8"Custom order"), sortMode == SortMode::Custom))
+                sortMode = SortMode::Custom;
+            if (ImGui::RadioButton(T(u8"Alphabetical"), sortMode == SortMode::Alpha))
+                sortMode = SortMode::Alpha;
+            if (ImGui::RadioButton(T(u8"Distance from camera"), sortMode == SortMode::Distance))
+                sortMode = SortMode::Distance;
+            ImGui::Separator();
+            bool asc = !sortDesc;
+            if (ImGui::RadioButton(T(u8"Ascending"),  asc))  sortDesc = false;
+            if (ImGui::RadioButton(T(u8"Descending"), sortDesc)) sortDesc = true;
+            ImGui::EndPopup();
+        }
         ImGui::SameLine();
         ImGui::SetNextItemWidth(-1);
         ImGui::InputText(u8"##explorer_filter", filterBuf, sizeof(filterBuf));
@@ -459,18 +639,48 @@ namespace Explorer {
             std::string filter = filterBuf;
             std::transform(filter.begin(), filter.end(), filter.begin(), ::tolower);
 
-            if (!filter.empty())
+            bool useFlat = !filter.empty() || sortMode != SortMode::Custom || sortDesc;
+            if (useFlat)
             {
+                // Build index list, apply filter
+                std::vector<int> indices;
+                indices.reserve(objectList.size());
                 for (int i = 0; i < (int)objectList.size(); ++i)
                 {
-                    ObjectEntry& obj = objectList[i];
-                    std::string label = obj.name.empty() ? obj.type : obj.name;
-                    std::string lower = label;
-                    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-                    if (lower.find(filter) == std::string::npos && obj.id.find(filter) == std::string::npos)
-                        continue;
-                    RenderItem(i);
+                    if (!filter.empty())
+                    {
+                        const ObjectEntry& obj = objectList[i];
+                        std::string label = obj.name.empty() ? obj.type : obj.name;
+                        std::transform(label.begin(), label.end(), label.begin(), ::tolower);
+                        if (label.find(filter) == std::string::npos && obj.id.find(filter) == std::string::npos)
+                            continue;
+                    }
+                    indices.push_back(i);
                 }
+
+                // Sort by chosen mode (custom = already in order, no re-sort needed)
+                if (sortMode == SortMode::Alpha)
+                {
+                    std::sort(indices.begin(), indices.end(), [](int a, int b) {
+                        const std::string& na = objectList[a].name.empty() ? objectList[a].type : objectList[a].name;
+                        const std::string& nb = objectList[b].name.empty() ? objectList[b].type : objectList[b].name;
+                        std::string la = na, lb = nb;
+                        std::transform(la.begin(), la.end(), la.begin(), ::tolower);
+                        std::transform(lb.begin(), lb.end(), lb.begin(), ::tolower);
+                        return la < lb;
+                    });
+                }
+                else if (sortMode == SortMode::Distance)
+                {
+                    std::sort(indices.begin(), indices.end(), [](int a, int b) {
+                        return DistSq(objectList[a]) < DistSq(objectList[b]);
+                    });
+                }
+
+                if (sortDesc) std::reverse(indices.begin(), indices.end());
+
+                for (int i : indices)
+                    RenderItem(i);
             }
             else if (rootGroupId >= 0)
             {
@@ -501,5 +711,7 @@ namespace Explorer {
         }
         ImGui::EndChild();
         ImGui::End();
+
+        RenderCreateModal();
     }
 }

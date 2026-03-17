@@ -184,6 +184,16 @@ namespace KogamaStudio
                 RecoveryMode.EnableRecoveryMode();
             }
 
+            if (Time.frameCount % 30 == 0)
+            {
+                var _cam = MVGameControllerBase.MainCameraManager?.MainCamera;
+                if (_cam != null)
+                {
+                    var _p = _cam.transform.position;
+                    PipeClient.SendCommand($"camera_pos|{_p.x:F2}|{_p.y:F2}|{_p.z:F2}");
+                }
+            }
+
             if (AddLinePatch.TranslateTextCubesEnabled)
             {
                 TranslationManager.UpdateLiveTranslation();

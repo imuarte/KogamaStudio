@@ -26,6 +26,7 @@
 namespace menu {
     bool isOpen = false;
     bool viewportHovered = false;
+    bool blockMouseInput = false;
     ImVec2 viewportImageMin = {};
     ImVec2 viewportImageMax = {};
     float menuBarHeight = 0.0f;

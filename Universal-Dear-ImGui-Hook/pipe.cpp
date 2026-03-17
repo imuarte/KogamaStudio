@@ -195,6 +195,18 @@ namespace pipe {
         {
             Explorer::DeselectAll();
         }
+        else if (command == "camera_pos")
+        {
+            size_t s1 = param.find('|');
+            size_t s2 = s1 != std::string::npos ? param.find('|', s1 + 1) : std::string::npos;
+            if (s2 != std::string::npos)
+            {
+                float cx = std::stof(param.substr(0, s1));
+                float cy = std::stof(param.substr(s1 + 1, s2 - s1 - 1));
+                float cz = std::stof(param.substr(s2 + 1));
+                Explorer::SetCameraPos(cx, cy, cz);
+            }
+        }
         else if (command == "gameinfo_update")
         {
             GameInfo::SetData(param);

@@ -130,6 +130,9 @@
       <Command>
       </Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>copy /Y "$(OutDir)$(TargetName).dll" "$(LOCALAPPDATA)\KogamaLauncher-WWW\Launcher\Standalone\BepInEx\plugins\$(TargetName).dll"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <PreBuildEvent>

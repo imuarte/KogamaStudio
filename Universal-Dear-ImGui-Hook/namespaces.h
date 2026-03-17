@@ -169,6 +169,7 @@ namespace hooks_vk {
 namespace menu {
         extern bool isOpen;
         extern bool viewportHovered;
+        extern bool blockMouseInput;
         extern ImVec2 viewportImageMin;
         extern ImVec2 viewportImageMax;
         extern float menuBarHeight;
