@@ -28,6 +28,11 @@ namespace pipe {
     int   pasteTotalCubes  = 0;
     float pasteEtaSeconds  = -1.0f;
 
+    bool  isWorldLoading  = false;
+    int   worldLoadPlaced = 0;
+    int   worldLoadTotal  = 0;
+    float worldLoadEta    = -1.0f;
+
 
     void ProcessCommand(const std::string& cmd)
     {
@@ -71,45 +76,31 @@ namespace pipe {
             float progress = std::stof(param);
             generateProgress = progress;
         }
-        else if (command == "properties_position_x")
+        else if (command == "properties_update")
         {
-            Properties::positionX = std::stof(param);
-        }
-        else if (command == "properties_position_y")
-        {
-            Properties::positionY = std::stof(param);
-        }
-        else if (command == "properties_position_z")
-        {
-            Properties::positionZ = std::stof(param);
-        }
-        else if (command == "properties_rotation_x")
-        {
-            Properties::rotationX = std::stof(param);
-        }
-        else if (command == "properties_rotation_y")
-        {
-            Properties::rotationY = std::stof(param);
-        }
-        else if (command == "properties_rotation_z")
-        {
-            Properties::rotationZ = std::stof(param);
-        }
-        else if (command == "properties_object_id")
-        {
-            Properties::targetObjectId = param;
+            // format: id|itemId|groupId|posX|posY|posZ|rotX|rotY|rotZ|isModel|protoId
+            auto tok = [](const std::string& s, int idx) -> std::string {
+                size_t start = 0;
+                for (int i = 0; i < idx; ++i) {
+                    start = s.find('|', start);
+                    if (start == std::string::npos) return "";
+                    ++start;
+                }
+                size_t end = s.find('|', start);
+                return s.substr(start, end == std::string::npos ? end : end - start);
+            };
+            Properties::targetObjectId = tok(param, 0);
+            Properties::itemId         = std::stoi(tok(param, 1));
+            Properties::groupId        = std::stoi(tok(param, 2));
+            Properties::positionX      = std::stof(tok(param, 3));
+            Properties::positionY      = std::stof(tok(param, 4));
+            Properties::positionZ      = std::stof(tok(param, 5));
+            Properties::rotationX      = std::stof(tok(param, 6));
+            Properties::rotationY      = std::stof(tok(param, 7));
+            Properties::rotationZ      = std::stof(tok(param, 8));
+            Properties::isModel        = tok(param, 9) == "1";
+            Properties::prototypeId    = std::stoi(tok(param, 10));
             Inventory::ClearSelection();
-        }
-        else if (command == "properties_is_model")
-        {
-            if (param == "true")
-            {
-                Properties::isModel = true;
-            }
-            else if (param == "false")
-            {
-                Properties::isModel = false;
-            }
         }
         else if (command == "clipboard_count")
         {
@@ -183,11 +174,26 @@ namespace pipe {
         }
         else if (command == "explorer_ready")
         {
-            Explorer::LoadFromFile(param);
+            size_t sep = param.find('|');
+            if (sep != std::string::npos)
+            {
+                std::string path       = param.substr(0, sep);
+                int         rootGroup  = std::stoi(param.substr(sep + 1));
+                Explorer::SetRootGroupId(rootGroup);
+                Explorer::LoadFromFile(path);
+            }
+            else
+            {
+                Explorer::LoadFromFile(param);
+            }
         }
         else if (command == "explorer_set_selected")
         {
             Explorer::SetSelected(param);
+        }
+        else if (command == "explorer_deselect_all")
+        {
+            Explorer::DeselectAll();
         }
         else if (command == "gameinfo_update")
         {
@@ -270,6 +276,22 @@ namespace pipe {
         else if (command == "camera_mode_unavailable")
         {
             CameraPanel::ResetModeSelection();
+        }
+        else if (command == "world_load_progress")
+        {
+            size_t s1 = param.find('|');
+            size_t s2 = s1 != std::string::npos ? param.find('|', s1 + 1) : std::string::npos;
+            worldLoadPlaced = ::atoi(param.substr(0, s1).c_str());
+            worldLoadTotal  = s1 != std::string::npos ? ::atoi(param.substr(s1 + 1, s2 - s1 - 1).c_str()) : 0;
+            worldLoadEta    = s2 != std::string::npos ? ::atof(param.substr(s2 + 1).c_str()) : -1.0f;
+            isWorldLoading  = true;
+        }
+        else if (command == "world_load_done")
+        {
+            isWorldLoading  = false;
+            worldLoadPlaced = 0;
+            worldLoadTotal  = 0;
+            worldLoadEta    = -1.0f;
         }
     }
 

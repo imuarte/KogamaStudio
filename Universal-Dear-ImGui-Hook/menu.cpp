@@ -21,6 +21,7 @@
 #include "GameInfo.h"
 #include "Inventory.h"
 #include "History.h"
+#include "Worlds.h"
 
 namespace menu {
     bool isOpen = false;
@@ -112,6 +113,8 @@ namespace menu {
         if (!dockLayoutBuilt)
         {
             dockLayoutBuilt = true;
+            if (ImGui::DockBuilderGetNode(dockId) != nullptr)
+                goto dockLayoutDone; // layout loaded from ini, skip default build
             ImGui::DockBuilderRemoveNode(dockId);
             ImGui::DockBuilderAddNode(dockId, ImGuiDockNodeFlags_DockSpace);
             ImGui::DockBuilderSetNodeSize(dockId, mainViewport->WorkSize);
@@ -142,7 +145,9 @@ namespace menu {
             ImGui::DockBuilderDockWindow(u8"###Translate",     dockRightBottom);
             ImGui::DockBuilderDockWindow(u8"###About",         dockRightBottom);
             ImGui::DockBuilderDockWindow(u8"###Console",       dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###Worlds",        dockRightBottom);
             ImGui::DockBuilderFinish(dockId);
+            dockLayoutDone:;
         }
 
         ImGui::End();
@@ -192,6 +197,13 @@ namespace menu {
         ImGui::End();
         ImGui::PopStyleVar();
 
+        static bool prevViewportHovered = false;
+        if (viewportHovered != prevViewportHovered)
+        {
+            prevViewportHovered = viewportHovered;
+            SendCommand(viewportHovered ? u8"viewport_cursor|false" : u8"viewport_cursor|true");
+        }
+
         // --- Main panels (all manage their own Begin/End) ---
         Explorer::Render();
         Tools::Render();
@@ -207,6 +219,7 @@ namespace menu {
         ResourcePacks::Render();
         Translate::Render();
         About::Render();
+        Worlds::Render();
 
         if (ImGui::BeginMainMenuBar())
         {

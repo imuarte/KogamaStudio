@@ -1,7 +1,6 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using UnityEngine;
-using Il2Cpp;
-using MelonLoader;
+
 
 
 namespace KogamaStudio.Objects
@@ -16,7 +15,7 @@ namespace KogamaStudio.Objects
         private static void SendPackagePrefix(EditorWorldObjectCreation __instance)
         {
             savedEditorWOC = __instance;
-            MelonLogger.Msg("EditorWorldObjectCreation captured on Initialize!");
+            KogamaStudio.Log.LogInfo("EditorWorldObjectCreation captured on Initialize!");
         }
     }
 }

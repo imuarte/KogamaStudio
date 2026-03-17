@@ -1,11 +1,10 @@
-﻿using Harmony;
-using Il2Cpp;
-using Il2CppAssets.Scripts.WorldObjectTypes.MVTextMsg;
-using Il2CppBorodar.FarlandSkies.CloudyCrownPro.DotParams;
-using Il2CppExitGames.Client.Photon;
+using HarmonyLib;
+using Assets.Scripts.WorldObjectTypes.MVTextMsg;
+using Borodar.FarlandSkies.CloudyCrownPro.DotParams;
+using ExitGames.Client.Photon;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.Runtime;
-using Il2CppMV.WorldObject;
+using MV.WorldObject;
 using Il2CppSystem.Collections.Generic;
 using Il2CppSystem.Runtime.InteropServices;
 using KogamaModFramework.Data;
@@ -20,12 +19,13 @@ using KogamaStudio.ResourcePacks.Materials;
 using KogamaStudio.Tools.Build;
 using KogamaStudio.Tools.Properties;
 using KogamaStudio.Translator;
-using MelonLoader;
+
 using Newtonsoft.Json;
 using System.Drawing;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using MV.Common;
 
 
 namespace KogamaStudio;
@@ -41,6 +41,22 @@ public class CommandHandler
     private static System.Collections.Generic.Dictionary<int, string> _originalTexts = new System.Collections.Generic.Dictionary<int, string>();
 
     internal static Vector3 currentEulerAngles = Vector3.zero;
+
+    // tysm becko
+    internal static void LoadReferences()
+    {
+        if (MVGameControllerBase.GameMode == MV.Common.MVGameMode.Edit)
+        {
+            DesktopEditModeController = MVGameControllerBase.EditModeUI.Cast<DesktopEditModeController>();
+            EditorStateMachine = DesktopEditModeController.EditModeStateMachine;
+            CubeModelingStateMachine = EditorStateMachine.cubeModelingStateMachine;
+            EditorWorldObjectCreation = DesktopEditModeController.editorWorldObjectCreation;
+        }
+        else if (MVGameControllerBase.GameMode == MV.Common.MVGameMode.Play)
+        {
+            DesktopPlayModeController = MVGameControllerBase.PlayModeUI.Cast<DesktopPlayModeController>();
+        }
+    }
 
     private static void HandleCloneObject(int id)
     {
@@ -58,7 +74,7 @@ public class CommandHandler
         if (wo.Delete(MVGameControllerBase.WOCM, ref error))
         {
             string message = $"Removed {id}";
-            MelonLogger.Msg(message);
+            KogamaStudio.Log.LogInfo(message);
             TextCommand.NotifyUser(message);
         }
     }
@@ -83,7 +99,7 @@ new System.Collections.Generic.Queue<(int id, string text)>();
             var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(id);
 
             TextCommand.NotifyUser($"{id} {wo.type}");
-            MelonLogger.Msg($"{id} {wo.type}");
+            KogamaStudio.Log.LogInfo($"{id} {wo.type}");
         }
     }
 
@@ -125,7 +141,7 @@ new System.Collections.Generic.Queue<(int id, string text)>();
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"[CommandHandler] Error: {ex.Message}");
+            KogamaStudio.Log.LogError($"[CommandHandler] Error: {ex.Message}");
         }
     }
 
@@ -134,10 +150,12 @@ new System.Collections.Generic.Queue<(int id, string text)>();
         int sep = cmd.IndexOf('|');
         string command = sep >= 0 ? cmd[..sep] : cmd;
         string param = sep >= 0 ? cmd[(sep + 1)..] : "";
-        MelonCoroutines.Start(ExecuteCommand(command, param));
+        KogamaStudioBehaviour.StartCo(ExecuteCommand(command, param));
     }
 
     public static int RootGroupId => MVGameControllerBase.WOCM?.RootGroup?.Id ?? -1;
+
+    private static UnityEngine.GameObject _savedFocus = null;
 
     public static CursorLockMode previousLockState = CursorLockMode.None;
     public static int targetWoId = -1;
@@ -145,6 +163,164 @@ new System.Collections.Generic.Queue<(int id, string text)>();
     public static bool previousVisible = true;
     public static MVWorldObjectClient savedWo = null;
 
+    private static int _lockCount;
+    private static bool _lockDone;
+    private static bool _transferDone;
+    private static int _newGroupId = -1;
+    private static bool _groupCreated;
+
+    private static Il2CppSystem.EventHandler<OnHierarchyLockedEventArgs>     _lockHandler;
+    private static Il2CppSystem.EventHandler<OnTransferWosResponseEventArgs> _transferHandler;
+    private static Il2CppSystem.EventHandler<InitializedGameQueryDataEventArgs> _groupCreatedHandler;
+
+    private static void SubscribeLock()
+    {
+        _lockHandler = DelegateSupport.ConvertDelegate<Il2CppSystem.EventHandler<OnHierarchyLockedEventArgs>>(
+            new System.Action<Il2CppSystem.Object, OnHierarchyLockedEventArgs>((s, e) =>
+            {
+                _lockCount--;
+                if (_lockCount <= 0)
+                {
+                    _lockDone = true;
+                    MVGameControllerBase.WOCM.OnHierarchyLockedResponse =
+                        MVGameControllerBase.WOCM.OnHierarchyLockedResponse - _lockHandler;
+                }
+            }));
+        MVGameControllerBase.WOCM.OnHierarchyLockedResponse =
+            MVGameControllerBase.WOCM.OnHierarchyLockedResponse + _lockHandler;
+    }
+
+    private static void SubscribeTransfer()
+    {
+        _transferHandler = DelegateSupport.ConvertDelegate<Il2CppSystem.EventHandler<OnTransferWosResponseEventArgs>>(
+            new System.Action<Il2CppSystem.Object, OnTransferWosResponseEventArgs>((s, e) =>
+            {
+                _transferDone = true;
+                MVGameControllerBase.WOCM.OnTransferWosResponse =
+                    MVGameControllerBase.WOCM.OnTransferWosResponse - _transferHandler;
+            }));
+        MVGameControllerBase.WOCM.OnTransferWosResponse =
+            MVGameControllerBase.WOCM.OnTransferWosResponse + _transferHandler;
+    }
+
+    private static void SubscribeGroupCreated()
+    {
+        _groupCreatedHandler = DelegateSupport.ConvertDelegate<Il2CppSystem.EventHandler<InitializedGameQueryDataEventArgs>>(
+            new System.Action<Il2CppSystem.Object, InitializedGameQueryDataEventArgs>((s, e) =>
+            {
+                if (MVGameControllerBase.LocalPlayer.ActorNr == e.InstigatorActorNumber)
+                {
+                    _newGroupId = e.RootWO.Id;
+                    _groupCreated = true;
+                    KogamaStudio.Log.LogInfo($"[GroupObjects] Group created: {_newGroupId}");
+                    MVGameControllerBase.Game.World.InitializedGameQueryData =
+                        MVGameControllerBase.Game.World.InitializedGameQueryData - _groupCreatedHandler;
+                }
+            }));
+        MVGameControllerBase.Game.World.InitializedGameQueryData =
+            MVGameControllerBase.Game.World.InitializedGameQueryData + _groupCreatedHandler;
+    }
+
+    private static System.Collections.IEnumerator MoveToGroupCoroutine(int targetGroupId, int[] objectIds)
+    {
+        var rootId = MVGameControllerBase.WOCM.RootGroup.Id;
+        bool isRoot = targetGroupId == rootId;
+
+        KogamaStudio.Log.LogInfo($"[Move] Target: {targetGroupId}, isRoot: {isRoot}, objects: {string.Join(",", objectIds)}");
+
+        _lockCount    = objectIds.Length + (isRoot ? 0 : 1);
+        _lockDone     = false;
+        _transferDone = false;
+
+        SubscribeLock();
+
+        if (!isRoot)
+        {
+            KogamaStudio.Log.LogInfo($"[Move] Locking target group {targetGroupId}");
+            MVGameControllerBase.OperationRequests.LockHierarchy(targetGroupId, true);
+        }
+
+        foreach (int id in objectIds)
+        {
+            KogamaStudio.Log.LogInfo($"[Move] Locking object {id}");
+            MVGameControllerBase.OperationRequests.LockHierarchy(id, true);
+        }
+
+        KogamaStudio.Log.LogInfo($"[Move] Waiting for {_lockCount} locks...");
+        while (!_lockDone) yield return null;
+        KogamaStudio.Log.LogInfo("[Move] All locks acquired");
+
+        SubscribeTransfer();
+        KogamaStudio.Log.LogInfo($"[Move] Calling TransferWorldObjectsToGroup({targetGroupId}, [{string.Join(",", objectIds)}])");
+        MVGameControllerBase.OperationRequests.TransferWorldObjectsToGroup(
+            targetGroupId, new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<int>(objectIds));
+
+        KogamaStudio.Log.LogInfo("[Move] Waiting for transfer response...");
+
+        float timeout = 0f;
+        while (!_transferDone)
+        {
+            timeout += UnityEngine.Time.deltaTime;
+            if (timeout > 10f)
+            {
+                KogamaStudio.Log.LogInfo("[Move] TIMEOUT - transfer response never came");
+                yield break;
+            }
+            yield return null;
+        }
+        KogamaStudio.Log.LogInfo("[Move] Transfer done!");
+
+        foreach (int id in objectIds)
+            MVGameControllerBase.OperationRequests.LockHierarchy(id, false);
+        if (!isRoot)
+            MVGameControllerBase.OperationRequests.LockHierarchy(targetGroupId, false);
+        MVGameControllerBase.OperationRequests.TransferOwnership(targetGroupId, 0, null);
+
+        Explorer.ExplorerManager.Refresh();
+        KogamaStudio.Log.LogInfo("[Move] Finished");
+        PipeClient.SendCommand("explorer_deselect_all");
+    }
+
+    private static System.Collections.IEnumerator GroupObjectsCoroutine(int[] objectIds, UnityEngine.Vector3 position, int parentGroupId)
+    {
+        _lockCount    = objectIds.Length;
+        _lockDone     = false;
+        _transferDone = false;
+        _groupCreated = false;
+        _newGroupId   = -1;
+
+        SubscribeLock();
+        foreach (int id in objectIds)
+            MVGameControllerBase.OperationRequests.LockHierarchy(id, true);
+        while (!_lockDone) yield return null;
+
+        SubscribeGroupCreated();
+        MVGameControllerBase.OperationRequests.RequestBuiltInItem(
+            BuiltInItem.Group,
+            parentGroupId,
+            new Il2CppSystem.Collections.Generic.Dictionary<Il2CppSystem.Object, Il2CppSystem.Object>(),
+            position,
+            UnityEngine.Quaternion.identity,
+            UnityEngine.Vector3.one,
+            true,
+            true
+        );
+        while (!_groupCreated) yield return null;
+
+        SubscribeTransfer();
+        MVGameControllerBase.OperationRequests.TransferWorldObjectsToGroup(
+            _newGroupId, new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<int>(objectIds));
+
+        while (!_transferDone) yield return null;
+
+        foreach (int id in objectIds)
+            MVGameControllerBase.OperationRequests.LockHierarchy(id, false);
+        MVGameControllerBase.OperationRequests.TransferOwnership(_newGroupId, 0, null);
+
+        KogamaStudio.Log.LogInfo($"[GroupObjects] Grouped {objectIds.Length} objects into group {_newGroupId}");
+        Explorer.ExplorerManager.Refresh();
+        PipeClient.SendCommand("explorer_deselect_all");
+    }
 
     public static System.Collections.IEnumerator ExecuteCommand(string command, string param)
     {
@@ -159,7 +335,7 @@ new System.Collections.Generic.Queue<(int id, string text)>();
 
                     if (!Directory.Exists(path))
                     {
-                        MelonLogger.Error($"Path not found {path}");
+                        KogamaStudio.Log.LogError($"Path not found {path}");
                         break;
                     }
 
@@ -169,7 +345,7 @@ new System.Collections.Generic.Queue<(int id, string text)>();
 
                     MaterialsLoader.LoadTexture(files);
 
-                    MelonLogger.Msg("[CommandHandler] test");
+                    KogamaStudio.Log.LogInfo("[CommandHandler] test");
 
                     break;
 
@@ -182,6 +358,20 @@ new System.Collections.Generic.Queue<(int id, string text)>();
 
                     }
                      break;
+                case "viewport_cursor":
+                {
+                    var es = UnityEngine.EventSystems.EventSystem.current;
+                    if (param == "true")
+                    {
+                        _savedFocus = es?.currentSelectedGameObject;
+                        es?.SetSelectedGameObject(null);
+                    }
+                    else
+                    {
+                        es?.SetSelectedGameObject(_savedFocus);
+                    }
+                    break;
+                }
                 case "option_no_build_limit":
                     NoBuildLimit.Enabled = param == "true";
                     break;
@@ -235,6 +425,23 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                 case "option_custom_model_scale_value":
                     CustomModelScale.Scale = float.Parse(param);
                     break;
+                // CUSTOM WO SCALE
+                case "option_custom_wo_scale_enabled":
+                    CustomWOScale.Enabled = param == "true";
+                    if (param == "true") CustomWOScale.RequestNewGroupIfNecessary();
+                    break;
+                case "option_custom_wo_scale_x":
+                    CustomWOScale.Scale = new Vector3(float.Parse(param, System.Globalization.CultureInfo.InvariantCulture), CustomWOScale.Scale.y, CustomWOScale.Scale.z);
+                    if (CustomWOScale.Enabled) CustomWOScale.RequestNewGroupIfNecessary();
+                    break;
+                case "option_custom_wo_scale_y":
+                    CustomWOScale.Scale = new Vector3(CustomWOScale.Scale.x, float.Parse(param, System.Globalization.CultureInfo.InvariantCulture), CustomWOScale.Scale.z);
+                    if (CustomWOScale.Enabled) CustomWOScale.RequestNewGroupIfNecessary();
+                    break;
+                case "option_custom_wo_scale_z":
+                    CustomWOScale.Scale = new Vector3(CustomWOScale.Scale.x, CustomWOScale.Scale.y, float.Parse(param, System.Globalization.CultureInfo.InvariantCulture));
+                    if (CustomWOScale.Enabled) CustomWOScale.RequestNewGroupIfNecessary();
+                    break;
 
                 case "generate_model":
                     if (!ModelBuilder.IsBuilding)
@@ -242,7 +449,7 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                         var cubes = ModelLoader.LoadModel(param);
                         if (cubes != null) 
                         { 
-                            MelonCoroutines.Start(ModelBuilder.Build(cubes)); 
+                            KogamaStudioBehaviour.StartCo(ModelBuilder.Build(cubes)); 
                         }
                     }
                     break;
@@ -268,24 +475,61 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 case "objects_visible":
                     break;
+                case "explorer_create_group":
+                {
+                    MVGameControllerBase.OperationRequests.RequestBuiltInItem(
+                        BuiltInItem.Group,
+                        EditorStateMachine.ParentGroupID,
+                        new Il2CppSystem.Collections.Generic.Dictionary<Il2CppSystem.Object, Il2CppSystem.Object>(),
+                        UnityEngine.Vector3.zero,
+                        UnityEngine.Quaternion.identity,
+                        UnityEngine.Vector3.one,
+                        false,
+                        true
+                    );
+                    break;
+                }
+                case "explorer_set_order":
+                    ExplorerManager.SetOrder(param);
+                    break;
                 case "explorer_refresh":
                     ExplorerManager.Refresh();
                     break;
+                case "explorer_move_to_group":
+                {
+                    var sep2 = param.IndexOf('|');
+                    if (sep2 < 0) break;
+                    if (!int.TryParse(param[..sep2], out int targetGroupId)) break;
+                    var ids = param[(sep2 + 1)..].Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                 .Select(s => int.Parse(s.Trim())).ToArray();
+                    if (ids.Length == 0) break;
+                    KogamaStudioBehaviour.StartCo(MoveToGroupCoroutine(targetGroupId, ids));
+                    break;
+                }
+                case "explorer_group_selection":
+                {
+                    var ids = param.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                   .Select(s => int.Parse(s.Trim())).ToArray();
+                    if (ids.Length == 0) break;
+                    var wocm = MVGameControllerBase.WOCM;
+                    var pos = UnityEngine.Vector3.zero;
+                    int validCount = 0;
+                    foreach (int id in ids)
+                    {
+                        var wo = wocm.GetWorldObjectClient(id);
+                        if (wo != null) { pos += wo.Position; validCount++; }
+                    }
+                    if (validCount > 0) pos /= validCount;
+                    int parentGroup = wocm.RootGroup?.Id ?? -1;
+                    KogamaStudioBehaviour.StartCo(GroupObjectsCoroutine(ids, pos, parentGroup));
+                    break;
+                }
                 case "explorer_rename":
                 {
-                    var sep = param.IndexOf('|');
-                    if (sep < 0) break;
-                    if (!int.TryParse(param[..sep], out int renameId)) break;
-                    string newName = param[(sep + 1)..];
-                    int planetID = GameInfo.PlanetID;
-                    if (planetID == -1) break;
-                    var metaPath = ExplorerManager.GetMetaFilePath(planetID);
-                    var meta = new System.Collections.Generic.Dictionary<int, ObjectMetaEntry>();
-                    if (File.Exists(metaPath))
-                        try { meta = JsonConvert.DeserializeObject<System.Collections.Generic.Dictionary<int, ObjectMetaEntry>>(File.ReadAllText(metaPath)) ?? meta; } catch { }
-                    if (string.IsNullOrEmpty(newName)) meta.Remove(renameId);
-                    else meta[renameId] = new ObjectMetaEntry { Name = newName };
-                    File.WriteAllText(metaPath, JsonConvert.SerializeObject(meta));
+                    var sep2 = param.IndexOf('|');
+                    if (sep2 < 0) break;
+                    if (!int.TryParse(param[..sep2], out int renameId)) break;
+                    ExplorerManager.Rename(renameId, param[(sep2 + 1)..]);
                     break;
                 }
                 case "explorer_select":
@@ -320,8 +564,8 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                         if (camMgr?.cameraController != null)
                             try
                             {
-                                camMgr.cameraController.SetCamera((Il2Cpp.CameraType)modeId);
-                                CameraModeModifier.Mode = (Il2Cpp.CameraType)modeId;
+                                camMgr.cameraController.SetCamera((CameraType)modeId);
+                                CameraModeModifier.Mode = (CameraType)modeId;
                                 CameraModeModifier.Enabled = true;
                             }
                             catch (Exception) { PipeClient.SendCommand("camera_mode_unavailable"); }
@@ -344,7 +588,7 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 case "translate_text_cubes_translate":
                     TranslationManager.BackupTextCubes();
-                    MelonCoroutines.Start(TranslationManager.StartLiveTranslation());
+                    KogamaStudioBehaviour.StartCo(TranslationManager.StartLiveTranslation());
                     break;
 
                 case "translate_text_cubes_enabled":
@@ -392,45 +636,49 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                 case "properties_remove":
                     HandleRemove(PropertiesManager.SelectedWOId);
                     break;
-                case "properties_position_x":
+                case "properties_position":
                     {
-                        var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(PropertiesManager.SelectedWOId);
-                        if (wo == null) break;
-                        var newPos = wo.Position;
-                        newPos.x = float.Parse(param);
-                        WorldObjectOperations.SetPosition(PropertiesManager.SelectedWOId, newPos);
+                        var ps = param.Split('|');
+                        if (ps.Length == 3)
+                        {
+                            var ci = System.Globalization.CultureInfo.InvariantCulture;
+                            WorldObjectOperations.SetPosition(PropertiesManager.SelectedWOId,
+                                new Vector3(float.Parse(ps[0], ci), float.Parse(ps[1], ci), float.Parse(ps[2], ci)));
+                        }
                         break;
                     }
-                case "properties_position_y":
+                case "properties_rotation":
                     {
-                        var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(PropertiesManager.SelectedWOId);
-                        if (wo == null) break;
-                        var newPos = wo.Position;
-                        newPos.y = float.Parse(param);
-                        WorldObjectOperations.SetPosition(PropertiesManager.SelectedWOId, newPos);
+                        var ps = param.Split('|');
+                        if (ps.Length == 3)
+                        {
+                            var ci = System.Globalization.CultureInfo.InvariantCulture;
+                            currentEulerAngles = new Vector3(float.Parse(ps[0], ci), float.Parse(ps[1], ci), float.Parse(ps[2], ci));
+                            WorldObjectOperations.SetRotation(PropertiesManager.SelectedWOId, Quaternion.Euler(currentEulerAngles));
+                        }
                         break;
                     }
-                case "properties_position_z":
+                case "properties_history_rotation":
+                {
+                    var parts = param.Split('|');
+                    if (parts.Length == 7 && int.TryParse(parts[0], out int histRotId))
                     {
-                        var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(PropertiesManager.SelectedWOId);
-                        if (wo == null) break;
-                        var newPos = wo.Position;
-                        newPos.z = float.Parse(param);
-                        WorldObjectOperations.SetPosition(PropertiesManager.SelectedWOId, newPos);
-                        break;
+                        var oldQ = Quaternion.Euler(
+                            float.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture),
+                            float.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture),
+                            float.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture));
+                        var newQ = Quaternion.Euler(
+                            float.Parse(parts[4], System.Globalization.CultureInfo.InvariantCulture),
+                            float.Parse(parts[5], System.Globalization.CultureInfo.InvariantCulture),
+                            float.Parse(parts[6], System.Globalization.CultureInfo.InvariantCulture));
+                        PipeClient.SendCommand(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                            "history_rotation|{0}|{1:F5}|{2:F5}|{3:F5}|{4:F5}|{5:F5}|{6:F5}|{7:F5}|{8:F5}",
+                            histRotId,
+                            oldQ.x, oldQ.y, oldQ.z, oldQ.w,
+                            newQ.x, newQ.y, newQ.z, newQ.w));
                     }
-                case "properties_rotation_x":
-                    currentEulerAngles.x = float.Parse(param);
-                    WorldObjectOperations.SetRotation(PropertiesManager.SelectedWOId, Quaternion.Euler(currentEulerAngles));
                     break;
-                case "properties_rotation_y":
-                    currentEulerAngles.y = float.Parse(param);
-                    WorldObjectOperations.SetRotation(PropertiesManager.SelectedWOId, Quaternion.Euler(currentEulerAngles));
-                    break;
-                case "properties_rotation_z":
-                    currentEulerAngles.z = float.Parse(param);
-                    WorldObjectOperations.SetRotation(PropertiesManager.SelectedWOId, Quaternion.Euler(currentEulerAngles));
-                    break;
+                }
                 // CLIPBOARD
                 case "clipboard_clear":
                     Clipboard.ClipboardManager.Clear();
@@ -504,6 +752,9 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     Clipboard.ClipboardManager.ShowPreview();
                     Clipboard.ClipboardManager.Preview = param == "true";
                     break;
+                case "clipboard_paste_cancel":
+                    Clipboard.ClipboardManager.CancelPaste();
+                    break;
                 case "inventory_refresh":
                     RefreshInventory();
                     break;
@@ -527,6 +778,20 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                         var cam = MVGameControllerBase.MainCameraManager?.MainCamera;
                         var pos = cam != null ? cam.transform.position + cam.transform.forward * 5f : UnityEngine.Vector3.zero;
                         MVGameControllerBase.OperationRequests.AddItemToWorld(placeItemId, RootGroupId, pos, UnityEngine.Quaternion.identity, true, true, false);
+                    });
+                    break;
+                }
+                case "world_place_item_in_group":
+                {
+                    var sep2 = param.IndexOf('|');
+                    if (sep2 < 0) break;
+                    if (!int.TryParse(param[..sep2], out int placeItemId)) break;
+                    if (!int.TryParse(param[(sep2 + 1)..], out int groupId)) break;
+                    KogamaStudio.RunOnMainThread(() =>
+                    {
+                        var cam = MVGameControllerBase.MainCameraManager?.MainCamera;
+                        var pos = cam != null ? cam.transform.position + cam.transform.forward * 5f : UnityEngine.Vector3.zero;
+                        MVGameControllerBase.OperationRequests.AddItemToWorld(placeItemId, groupId, pos, UnityEngine.Quaternion.identity, true, true, false);
                     });
                     break;
                 }
@@ -607,22 +872,16 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     CameraDistanceModifier.ApplyChanges();
                     break;
                 case "test":
-                    System.Action<string> managedAction = (error) => {
-                        MelonLogger.Msg("Error: " + error);
-                    };
-                    MVGameControllerBase.OperationRequests.PublishPlanet(
-                        DelegateSupport.ConvertDelegate<Il2CppSystem.Action<string>>(managedAction)
-                    );
                     break;
 
                 default:
-                    MelonLogger.Msg($"[Commands] Unknown: {command}");
+                    KogamaStudio.Log.LogInfo($"[Commands] Unknown: {command}");
                     break;
             }
         }
         catch (System.Exception ex)
         {
-            MelonLogger.Error($"[ExecuteCommand] Error: {ex.Message}");
+            KogamaStudio.Log.LogError($"[ExecuteCommand] Error: {ex.Message}");
         }
     }
 }

@@ -1,9 +1,8 @@
-﻿using Il2Cpp;
-using Il2CppMV.WorldObject;
+using MV.WorldObject;
 using KogamaModFramework.Operations;
 using KogamaStudio.Generating.Models;
 using KogamaStudio.Tools.Properties;
-using MelonLoader;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,7 +78,7 @@ internal class ClipboardManager
 
     internal static void SaveToFile(string path)
     {
-        if (Clipboard == null || Clipboard.Count == 0) { MelonLogger.Warning("[Clipboard] Nothing to save"); return; }
+        if (Clipboard == null || Clipboard.Count == 0) { KogamaStudio.Log.LogWarning("[Clipboard] Nothing to save"); return; }
         if (!Path.IsPathRooted(path))
         {
             var dir = Path.Combine(PathHelper.GetPath(), "Generate", "Cubes");
@@ -100,24 +99,24 @@ internal class ClipboardManager
             bw.Write(c.Materials);
             bw.Write(c.Corners);
         }
-        MelonLogger.Msg($"[Clipboard] Saved {Clipboard.Count} cubes to {path}");
+        KogamaStudio.Log.LogInfo($"[Clipboard] Saved {Clipboard.Count} cubes to {path}");
     }
 
     internal static void LoadFromFile(string path)
     {
         if (!Path.IsPathRooted(path))
             path = Path.Combine(PathHelper.GetPath(), "Generate", "Cubes", path + ".kscubes");
-        if (!File.Exists(path)) { MelonLogger.Warning($"[Clipboard] File not found: {path}"); return; }
+        if (!File.Exists(path)) { KogamaStudio.Log.LogWarning($"[Clipboard] File not found: {path}"); return; }
         using var fs = File.OpenRead(path);
         bool isJson = fs.ReadByte() == '{';
         fs.Seek(0, SeekOrigin.Begin);
         if (isJson)
         {
-            MelonLogger.Warning("[Clipboard] JSON .kscubes format is deprecated and will be removed in v1.0.0. Resave the file to convert it to binary.");
+            KogamaStudio.Log.LogWarning("[Clipboard] JSON .kscubes format is deprecated and will be removed in v1.0.0. Resave the file to convert it to binary.");
             using var reader = new StreamReader(fs);
             var jObj = Newtonsoft.Json.Linq.JObject.Parse(reader.ReadToEnd());
             var cubesArray = jObj["cubes"] as Newtonsoft.Json.Linq.JArray;
-            if (cubesArray == null) { MelonLogger.Warning("[Clipboard] Invalid file"); return; }
+            if (cubesArray == null) { KogamaStudio.Log.LogWarning("[Clipboard] Invalid file"); return; }
             Clipboard = cubesArray.Select(c => new CubeData(
                 c.Value<int>("x"), c.Value<int>("y"), c.Value<int>("z"),
                 c["materials"]?.ToObject<byte[]>(), c["corners"]?.ToObject<byte[]>()
@@ -129,7 +128,7 @@ internal class ClipboardManager
             var magic = br.ReadBytes(4);
             if (magic[0] != 'K' || magic[1] != 'S' || magic[2] != 'C' || magic[3] != 'B')
             {
-                MelonLogger.Error("[Clipboard] Unknown file format");
+                KogamaStudio.Log.LogError("[Clipboard] Unknown file format");
                 return;
             }
             br.ReadByte(); // version
@@ -148,7 +147,7 @@ internal class ClipboardManager
         }
         InvalidateCache();
         SendCount();
-        MelonLogger.Msg($"[Clipboard] Loaded {Clipboard.Count} cubes from {path}");
+        KogamaStudio.Log.LogInfo($"[Clipboard] Loaded {Clipboard.Count} cubes from {path}");
     }
 
     internal static List<CubeData> GetTransformedCubes()
@@ -183,6 +182,14 @@ internal class ClipboardManager
     }
 
     internal static int LastPasteTotalCubes = 0;
+    private static object _pasteCoroutine = null;
+
+    internal static void CancelPaste()
+    {
+        KogamaModFramework.Operations.CubeOperations.CancelGeneration = true;
+        _pasteCoroutine = null;
+        PipeClient.SendCommand("clipboard_paste_done");
+    }
 
     internal static void PasteEditedModel()
     {
@@ -215,7 +222,7 @@ internal class ClipboardManager
         if (!KogamaModFramework.Operations.CubeOperations.IsBuilding)
         {
             LastPasteTotalCubes = edited.Count;
-            MelonCoroutines.Start(KogamaModFramework.Operations.CubeOperations.Add(ModelProperties.CubeModelBase, edited));
+            KogamaStudioBehaviour.StartCo(KogamaModFramework.Operations.CubeOperations.Add(ModelProperties.CubeModelBase, edited));
         }
     }
 

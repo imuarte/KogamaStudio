@@ -1,7 +1,6 @@
-﻿using HarmonyLib;
-using Il2Cpp;
-using Il2CppMV.WorldObject;
-using MelonLoader;
+using HarmonyLib;
+using MV.WorldObject;
+
 
 namespace KogamaStudio;
 
@@ -22,7 +21,7 @@ internal static class WOReciever
     {
         if (MVGameControllerBase.IsInitialized)
         {
-            MelonLogger.Msg($"CreateQueryEvent: {root.ToString()},\t{instigatorActorNumber}");
+            KogamaStudio.Log.LogInfo($"CreateQueryEvent: {root.ToString()},\t{instigatorActorNumber}");
             OnWORecieved.Invoke(root, instigatorActorNumber);
         }
     }

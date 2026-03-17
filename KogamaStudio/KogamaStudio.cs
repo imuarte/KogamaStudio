@@ -1,25 +1,31 @@
-﻿using Il2Cpp;
-using KogamaStudio.Camera;
+﻿using KogamaStudio.Camera;
 using KogamaStudio.Clipboard;
 using KogamaStudio.Tools;
 using KogamaStudio.Tools.Properties;
 using KogamaStudio.Translator;
-using MelonLoader;
+using BepInEx;
+using BepInEx.Logging;
+using BepInEx.Unity.IL2CPP;
+using BepInEx.Unity.IL2CPP.Utils;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Windows;
 
-[assembly: MelonInfo(typeof(KogamaStudio.KogamaStudio), "KogamaStudio", KogamaStudio.KSVersion.Value, "Amuarte")]
-[assembly: MelonGame("Multiverse ApS", "KoGaMa")]
-
 namespace KogamaStudio
 {
-    public class KogamaStudio : MelonMod
+    [BepInPlugin("com.amuarte.kogamastudio", "KogamaStudio", KSVersion.Value)]
+    public class KogamaStudio : BasePlugin
     {
-public static bool gameInitialized = false;
+        internal static new ManualLogSource Log;
+        public static bool gameInitialized = false;
         private static bool harmonyPatched = false;
-        public override void OnInitializeMelon()
+
+        public override void Load()
         {
+            Log = base.Log;
+
+            var harmony = new HarmonyLib.Harmony("com.amuarte.kogamastudio");
+            harmony.PatchAll();
 
             if (harmonyPatched) return;
 
@@ -30,29 +36,47 @@ public static bool gameInitialized = false;
             var methods = typeof(SelectionController).GetMethods()
     .Where(m => m.Name == "SelectWO");
             foreach (var m in methods)
-                MelonLogger.Msg($"{m.Name}({string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name))})");
+                Log.LogInfo($"{m.Name}({string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name))})");
+
+            AddComponent<KogamaStudioBehaviour>();
         }
 
-        private bool? _lastFullscreen = null;
-        private static bool _wasPasting = false;
+        internal static bool _wasPasting = false;
         private static System.Collections.Concurrent.ConcurrentQueue<System.Action> _mainThreadQueue = new();
-        private static int _lastSentPlaced = -1;
-        private static int _lastObjectCount = -1;
-        private static float _explorerRefreshAt = -1f;
-
-        private static bool _lastCursorState = false;
+        internal static int _lastSentPlaced = -1;
+        internal static int _lastObjectCount = -1;
+        internal static float _explorerRefreshAt = -1f;
+        internal static bool _lastCursorState = false;
 
         public static void RunOnMainThread(System.Action action) => _mainThreadQueue.Enqueue(action);
 
-        public override void OnUpdate()
+        internal static void ProcessMainThread()
         {
             while (_mainThreadQueue.TryDequeue(out var action))
                 action();
+        }
+    }
+
+    public class KogamaStudioBehaviour : MonoBehaviour
+    {
+        internal static KogamaStudioBehaviour Instance;
+        private bool? _lastFullscreen = null;
+
+        void Awake() { Instance = this; }
+
+        internal static void StartCo(System.Collections.IEnumerator routine)
+        {
+            Instance.StartCoroutine(routine);
+        }
+
+        void Update()
+        {
+            KogamaStudio.ProcessMainThread();
 
             bool cursorState = Cursor.visible || Cursor.lockState == CursorLockMode.None;
-            if (cursorState != _lastCursorState)
+            if (cursorState != KogamaStudio._lastCursorState)
             {
-                _lastCursorState = cursorState;
+                KogamaStudio._lastCursorState = cursorState;
                 PipeClient.SendCommand($"cursor|{(cursorState ? "true" : "false")}");
             }
 
@@ -63,14 +87,15 @@ public static bool gameInitialized = false;
                 PipeClient.SendCommand($"fullscreen|{(fs ? "true" : "false")}");
             }
 
-            if (!gameInitialized)
+            if (!KogamaStudio.gameInitialized)
             {
                 if (MVGameControllerBase.IsInitialized)
                 {
-                    MelonLogger.Msg("KogamaStudio loaded!");
+                    KogamaStudio.Log.LogInfo("KogamaStudio loaded!");
 
 
-                    gameInitialized = true;
+                    KogamaStudio.gameInitialized = true;
+                    CommandHandler.LoadReferences();
                     PipeClient.SendCommand("game_initialized");
                     TextCommand.NotifyUser($"<b>KogamaStudio</b> v{KSVersion.Value} loaded!\nPress <b>F2</b> to open menu.");
                     Players.PlayerList.Start();
@@ -83,20 +108,20 @@ public static bool gameInitialized = false;
 
             }
 
-            if (gameInitialized)
+            if (KogamaStudio.gameInitialized)
             {
                 var wocm = MVGameControllerBase.WOCM;
                 if (wocm?.worldObjects != null)
                 {
                     int count = wocm.worldObjects.Count;
-                    if (count != _lastObjectCount)
+                    if (count != KogamaStudio._lastObjectCount)
                     {
-                        _lastObjectCount = count;
-                        _explorerRefreshAt = Time.time + 0.15f;
+                        KogamaStudio._lastObjectCount = count;
+                        KogamaStudio._explorerRefreshAt = Time.time + 1f;
                     }
-                    if (_explorerRefreshAt > 0f && Time.time >= _explorerRefreshAt)
+                    if (KogamaStudio._explorerRefreshAt > 0f && Time.time >= KogamaStudio._explorerRefreshAt)
                     {
-                        _explorerRefreshAt = -1f;
+                        KogamaStudio._explorerRefreshAt = -1f;
                         Explorer.ExplorerManager.Refresh();
                     }
                 }
@@ -107,9 +132,9 @@ public static bool gameInitialized = false;
                     float progress = KogamaModFramework.Operations.CubeOperations.Progress;
                     int total = ClipboardManager.LastPasteTotalCubes;
                     int placed = (int)(progress * total);
-                    if (placed != _lastSentPlaced)
+                    if (placed != KogamaStudio._lastSentPlaced)
                     {
-                        _lastSentPlaced = placed;
+                        KogamaStudio._lastSentPlaced = placed;
                         int batchSize = KogamaModFramework.Operations.CubeOperations.BatchSize;
                         float timePerBatch = KogamaModFramework.Operations.CubeOperations.FrameDelay / 60f;
                         int remainingBatches = (total - placed + batchSize - 1) / batchSize;
@@ -117,12 +142,12 @@ public static bool gameInitialized = false;
                         PipeClient.SendCommand($"clipboard_paste_progress|{placed}|{total}|{timeLeft:F1}");
                     }
                 }
-                else if (_wasPasting)
+                else if (KogamaStudio._wasPasting)
                 {
-                    _lastSentPlaced = -1;
+                    KogamaStudio._lastSentPlaced = -1;
                     PipeClient.SendCommand("clipboard_paste_done");
                 }
-                _wasPasting = pasting;
+                KogamaStudio._wasPasting = pasting;
 
                 var mgr = MVGameControllerBase.MainCameraManager;
                 var cam = mgr?.MainCamera;
@@ -177,7 +202,7 @@ public static bool gameInitialized = false;
         private static bool _wasZooming = false;
         private static float _savedFov = 60f;
 
-        public override void OnLateUpdate()
+        void LateUpdate()
         {
             Freecam.Update();
 

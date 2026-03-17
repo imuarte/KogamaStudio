@@ -1,10 +1,9 @@
-﻿using Il2Cpp;
-using Il2CppAssets.Scripts.WorldObjectTypes.EditablePickupItem;
-using Il2CppMV.WorldObject;
-using Il2CppWorldObjectTypes.MVDoor;
-using Il2CppWorldObjectTypes.VehicleEnergy;
+using Assets.Scripts.WorldObjectTypes.EditablePickupItem;
+using MV.WorldObject;
+using WorldObjectTypes.MVDoor;
+using WorldObjectTypes.VehicleEnergy;
 using KogamaModFramework.Operations;
-using MelonLoader;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +16,9 @@ internal class ModelProperties
 {
     internal static MVCubeModelBase CubeModelBase;
 
-    internal static MVCubeModelBase GetModelFromWorldObject(MVWorldObjectClient mVWorldObjectClient)
+    internal static MVCubeModelBase GetModel(MVWorldObjectClient mVWorldObjectClient) => GetModelFromWorldObject(mVWorldObjectClient);
+
+    private static MVCubeModelBase GetModelFromWorldObject(MVWorldObjectClient mVWorldObjectClient)
     {
         if (mVWorldObjectClient == null) return null;
 
@@ -49,15 +50,4 @@ internal class ModelProperties
         return null;
     }
 
-    internal static void SendProperties(MVWorldObjectClient wo)
-    {
-        CubeModelBase = GetModelFromWorldObject(wo);
-        if (CubeModelBase == null)
-        {
-            PipeClient.SendCommand("properties_is_model|false");
-            return;
-        }
-
-        PipeClient.SendCommand("properties_is_model|true");
-    }
 }

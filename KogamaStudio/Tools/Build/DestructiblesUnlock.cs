@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using Il2Cpp;
 
 // ty KogamaTools.Native
 namespace KogamaStudio.Tools.Build;

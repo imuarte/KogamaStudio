@@ -19,6 +19,17 @@ BOOL WINAPI hookClipCursor(const RECT* rect) {
     return menu::isOpen ? TRUE : oClipCursor(rect);
 }
 
+using GetCursorInfo_t = BOOL (WINAPI*)(PCURSORINFO);
+static GetCursorInfo_t oGetCursorInfo = nullptr;
+BOOL WINAPI hookGetCursorInfo(PCURSORINFO pci) {
+    BOOL result = oGetCursorInfo(pci);
+    if (result && pci && pipe::cursorVisible && menu::isOpen && !menu::viewportHovered) {
+        pci->flags &= ~CURSOR_SHOWING;
+        pci->hCursor = NULL;
+    }
+    return result;
+}
+
 namespace mousehooks {
     void Init() {
         HMODULE user32 = GetModuleHandleA("user32.dll");
@@ -38,6 +49,13 @@ namespace mousehooks {
                 DebugLog("[mousehooks] Hooked ClipCursor@%p\n", addr);
             }
         }
+
+        if (auto addr = GetProcAddress(user32, "GetCursorInfo")) {
+            if (MH_CreateHook(addr, reinterpret_cast<LPVOID>(hookGetCursorInfo), reinterpret_cast<LPVOID*>(&oGetCursorInfo)) == MH_OK) {
+                MH_EnableHook(addr);
+                DebugLog("[mousehooks] Hooked GetCursorInfo@%p\n", addr);
+            }
+        }
     }
 
     void Remove() {
@@ -51,6 +69,11 @@ namespace mousehooks {
         }
 
         if (auto addr = GetProcAddress(user32, "ClipCursor")) {
+            MH_DisableHook(addr);
+            MH_RemoveHook(addr);
+        }
+
+        if (auto addr = GetProcAddress(user32, "GetCursorInfo")) {
             MH_DisableHook(addr);
             MH_RemoveHook(addr);
         }

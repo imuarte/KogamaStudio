@@ -10,7 +10,7 @@ namespace Tools {
     static bool AntiAFK = false;
     static bool SingleSidePainting = false;
     static bool DestructiblesUnlock = false;
-    static bool BlueModeEnabled = true;
+    static bool BlueModeEnabled = false;
     static bool CustomGridSizeEnabled = false;
     static float CustomGridSizeValue = 1.0f;
     static bool CustomRotStepEnabled = false;
@@ -25,6 +25,8 @@ namespace Tools {
     static char PlayerName[64] = u8"";
     static bool CustomModelScaleEnabled = false;
     static float CustomModelScaleValue = 4.0f;
+    static bool CustomWOScaleEnabled = false;
+    static float CustomWOScaleValue[3] = { 1.0f, 1.0f, 1.0f };
 
 
 
@@ -157,6 +159,27 @@ namespace Tools {
                 snprintf(buffer, sizeof(buffer), u8"%.15g", CustomModelScaleValue);
                 SendCommand((u8"option_custom_model_scale_value|" + std::string(buffer)).c_str());
             }
+        }
+
+        // custom wo scale
+        if (ImGui::Checkbox(T(u8"Custom WO Scale"), &CustomWOScaleEnabled)) {
+            SendCommand(CustomWOScaleEnabled ? u8"option_custom_wo_scale_enabled|true" : u8"option_custom_wo_scale_enabled|false");
+        }
+
+        if (CustomWOScaleEnabled) {
+            ImGui::PushItemWidth(180);
+            if (ImGui::InputFloat3(T(u8"WO Scale"), CustomWOScaleValue, u8"%.6g")) {
+                if (!typing) typing = true;
+                char buf[96];
+                snprintf(buf, sizeof(buf), "%.15g", (double)CustomWOScaleValue[0]);
+                SendCommand((u8"option_custom_wo_scale_x|" + std::string(buf)).c_str());
+                snprintf(buf, sizeof(buf), "%.15g", (double)CustomWOScaleValue[1]);
+                SendCommand((u8"option_custom_wo_scale_y|" + std::string(buf)).c_str());
+                snprintf(buf, sizeof(buf), "%.15g", (double)CustomWOScaleValue[2]);
+                SendCommand((u8"option_custom_wo_scale_z|" + std::string(buf)).c_str());
+            }
+            if (!typing) typing = ImGui::IsItemActive();
+            ImGui::PopItemWidth();
         }
 
         if (ImGui::Button("Test")) {

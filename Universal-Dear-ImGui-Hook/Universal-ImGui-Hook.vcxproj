@@ -146,6 +146,7 @@
     <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="ItemProperties.cpp" />
     <ClCompile Include="Clipboard.cpp" />
+    <ClCompile Include="Worlds.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="d3d9hook.cpp" />
     <ClCompile Include="d3d10hook.cpp" />
@@ -194,6 +195,7 @@
     <ClInclude Include="ResourcePackLoader.h" />
     <ClInclude Include="Appearance.h" />
     <ClInclude Include="Clipboard.h" />
+    <ClInclude Include="Worlds.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="Generate.h" />
     <ClInclude Include="imgui\imconfig.h" />
@@ -228,6 +230,9 @@
   <ItemGroup>
     <Text Include="imgui\LICENSE.txt" />
   </ItemGroup>
+  <Target Name="CopyToMods" AfterTargets="Link">
+    <Copy SourceFiles="$(OutDir)$(TargetName)$(TargetExt)" DestinationFolder="$(LOCALAPPDATA)\KogamaLauncher-WWW\Launcher\Standalone\Mods" />
+  </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

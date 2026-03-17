@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
-using Il2Cpp;
-using MelonLoader;
+
 using UnityEngine;
 
 namespace KogamaStudio.ResourcePacks.Materials

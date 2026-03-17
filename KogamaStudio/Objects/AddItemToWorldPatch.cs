@@ -4,20 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
-using Il2Cpp;
-using MelonLoader;
+
 using UnityEngine;
 
-namespace KogamaStudio.Objects
+namespace KogamaStudio.Objects;
+
+[HarmonyPatch]
+internal class AddItemToWorldPatch
 {
-    [HarmonyPatch]
-    internal class AddItemToWorldPatch
+    [HarmonyPatch(typeof(MVNetworkGame.OperationRequests), "AddItemToWorld")]
+    [HarmonyPrefix]
+    static bool AddItemToWorldPrefix(int itemId, int groupId, Vector3 position, Quaternion rotation, bool localOwner, bool transferOwnershipToServerOnLeave, bool isPreviewItem)
     {
-        [HarmonyPatch(typeof(MVNetworkGame.OperationRequests), "AddItemToWorld")]
-        [HarmonyPrefix]
-        static bool AddItemToWorldPrefix(int itemId, int groupId, Vector3 position, Quaternion rotation, bool localOwner, bool transferOwnershipToServerOnLeave, bool isPreviewItem)
-        {
-            return true;
-        }
+        return true;
     }
 }

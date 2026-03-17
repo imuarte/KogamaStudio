@@ -1,7 +1,6 @@
 #nullable disable
-using Il2Cpp;
-using Il2CppMV.Common;
-using MelonLoader;
+using MV.Common;
+
 using System.Collections;
 using UnityEngine;
 
@@ -11,7 +10,7 @@ internal class PlayerList
 {
     internal static void Start()
     {
-        MelonCoroutines.Start(UpdateLoop());
+        KogamaStudioBehaviour.StartCo(UpdateLoop());
     }
 
     private static IEnumerator UpdateLoop()

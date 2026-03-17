@@ -1,15 +1,12 @@
-﻿using HarmonyLib;
-using Il2Cpp;
-using Il2CppExitGames.Client.Photon;
+using HarmonyLib;
+using ExitGames.Client.Photon;
 using Il2CppInterop.Runtime;
-using Il2CppMV.Common;
-using Il2CppMV.WorldObject;
+using MV.Common;
+using MV.WorldObject;
 using Il2CppSystem.Security.Cryptography;
-using MelonLoader;
+
 using System.Xml.Linq;
 using UnityEngine;
-using static Il2Cpp.Interop;
-using static Il2CppTMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 
 namespace KogamaStudio;
 
@@ -23,7 +20,7 @@ internal class RecoveryMode
     internal static void EnableRecoveryMode()
     {
         if (RecoveryModeEnabled) return;
-        MelonLogger.Msg("Recovery Mode Enabled!");
+        KogamaStudio.Log.LogInfo("Recovery Mode Enabled!");
         PipeClient.SendCommand("game_initialized");
         PipeClient.SendCommand("key_down|F2");
         PipeClient.SendCommand("recovery_mode");
@@ -93,7 +90,7 @@ internal class RecoveryMode
         if (__exception is Il2CppInterop.Runtime.Il2CppException &&
             __exception.Message.Contains("KeyNotFoundException"))
         {
-            MelonLogger.Warning("[RecoveryMode] Corrupted world data detected - missing 'OwnerActorNumber' key in WorldObjectFactory. Object will be skipped. This usually means the object has no owner assigned in the world data.");
+            KogamaStudio.Log.LogWarning("[RecoveryMode] Corrupted world data detected - missing 'OwnerActorNumber' key in WorldObjectFactory. Object will be skipped. This usually means the object has no owner assigned in the world data.");
             NotifyCorruption("Object skipped - missing owner data (OwnerActorNumber not found in world data)");
             return null;
         }
@@ -106,7 +103,7 @@ internal class RecoveryMode
     {
         if (wo == null)
         {
-            MelonLogger.Warning("[RecoveryMode] Corrupted world data detected - WorldObjectFactory returned null, object skipped. This is likely caused by an unknown or unsupported WorldObjectType.");
+            KogamaStudio.Log.LogWarning("[RecoveryMode] Corrupted world data detected - WorldObjectFactory returned null, object skipped. This is likely caused by an unknown or unsupported WorldObjectType.");
             NotifyCorruption("Object skipped - null or unknown world object type");
             return false;
         }
@@ -136,7 +133,7 @@ internal class RecoveryMode
                 : $"An object failed to initialize - {firstLine}.";
             string action = hasId ? "remove" : "";
 
-            MelonLogger.Warning($"[RecoveryMode] Object {_currentInitializingChildId} initialization failed: {firstLine}.");
+            KogamaStudio.Log.LogWarning($"[RecoveryMode] Object {_currentInitializingChildId} initialization failed: {firstLine}.");
             NotifyCorruption(description, _currentInitializingChildId.ToString(), action);
             return null;
         }
@@ -156,7 +153,7 @@ internal class RecoveryMode
         {
             if (_reportedBrokenLinks.Add(__instance.Pointer))
             {
-                MelonLogger.Warning("[RecoveryMode] ObjectLink points to a missing or null object - skipping.");
+                KogamaStudio.Log.LogWarning("[RecoveryMode] ObjectLink points to a missing or null object - skipping.");
                 NotifyCorruption("Object link broken - target object is missing or failed to load");
             }
             return null;

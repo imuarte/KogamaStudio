@@ -15,6 +15,11 @@ namespace pipe {
 	extern int   pasteTotalCubes;
 	extern float pasteEtaSeconds;
 
+	extern bool  isWorldLoading;
+	extern int   worldLoadPlaced;
+	extern int   worldLoadTotal;
+	extern float worldLoadEta;
+
 	void ListenForCommands();
 	void ProcessCommand(const std::string& cmd);
 }

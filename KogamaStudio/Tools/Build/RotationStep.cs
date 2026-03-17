@@ -1,5 +1,5 @@
 ﻿using HarmonyLib;
-using Il2CppUGUI.Desktop.Scripts.EditMode.Gizmo;
+using UGUI.Desktop.Scripts.EditMode.Gizmo;
 
 namespace KogamaStudio.Tools.Build;
 

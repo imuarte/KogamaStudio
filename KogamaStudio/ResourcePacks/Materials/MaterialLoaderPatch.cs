@@ -1,6 +1,5 @@
-﻿using Il2Cpp;
 using HarmonyLib;
-using MelonLoader;
+
 using UnityEngine;
 
 namespace KogamaStudio.ResourcePacks.Materials

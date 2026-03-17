@@ -26,6 +26,32 @@ namespace menu {
         }
     }
 
+    void SendCommandExtended(const char* cmd)
+    {
+        HANDLE hPipe = CreateFileA(
+            "\\\\.\\pipe\\KogamaStudioExtended",
+            GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL
+        );
+        if (hPipe != INVALID_HANDLE_VALUE) {
+            DWORD written;
+            WriteFile(hPipe, cmd, strlen(cmd), &written, NULL);
+            CloseHandle(hPipe);
+        }
+    }
+
+    bool IsExtendedAvailable()
+    {
+        HANDLE hPipe = CreateFileA(
+            "\\\\.\\pipe\\KogamaStudioExtended",
+            GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL
+        );
+        if (hPipe != INVALID_HANDLE_VALUE) {
+            CloseHandle(hPipe);
+            return true;
+        }
+        return false;
+    }
+
     void OpenFolder(std::string subpath)
     {
         char* buffer = nullptr;

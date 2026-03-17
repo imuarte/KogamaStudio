@@ -5,9 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
-using Il2Cpp;
 using Il2CppSystem;
-using MelonLoader;
+
 
 namespace KogamaStudio.Translator
 {

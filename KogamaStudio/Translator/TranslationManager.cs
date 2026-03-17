@@ -1,5 +1,4 @@
-﻿using Il2Cpp;
-using MelonLoader;
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -58,7 +57,7 @@ internal class TranslationManager
         foreach (var id in textIds)
             SetText(id, "Translating...");
 
-        MelonCoroutines.Start(TranslateAllAtOnce(textsArray, textIds, targetLanguage));
+        KogamaStudioBehaviour.StartCo(TranslateAllAtOnce(textsArray, textIds, targetLanguage));
     }
 
     internal static System.Collections.IEnumerator TranslateAllAtOnce(string[] textsArray, System.Collections.Generic.List<int> textIds, string targetLanguage)
@@ -111,7 +110,7 @@ internal class TranslationManager
             SetText(id, "Translating...");
 
         _isTranslating = true;
-        MelonCoroutines.Start(TranslateAndContinue(textsArray, textIds, AddLinePatch.TranslateTextCubesLanguage));
+        KogamaStudioBehaviour.StartCo(TranslateAndContinue(textsArray, textIds, AddLinePatch.TranslateTextCubesLanguage));
 
         foreach (var id in textIds)
             _translatedIds.Add(id);

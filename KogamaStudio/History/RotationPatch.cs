@@ -1,6 +1,5 @@
 using HarmonyLib;
-using Il2Cpp;
-using Il2CppUGUI.Desktop.Scripts.EditMode.Gizmo;
+using UGUI.Desktop.Scripts.EditMode.Gizmo;
 using KogamaStudio.Objects;
 using UnityEngine;
 

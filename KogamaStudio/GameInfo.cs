@@ -1,5 +1,4 @@
-using Il2Cpp;
-using MelonLoader;
+
 using System.Collections;
 using System.IO;
 using UnityEngine;
@@ -32,7 +31,7 @@ internal static class GameInfo
 
     internal static void Init()
     {
-        MelonCoroutines.Start(UpdateCoroutine());
+        KogamaStudioBehaviour.StartCo(UpdateCoroutine());
     }
 
     private static IEnumerator UpdateCoroutine()
@@ -78,7 +77,12 @@ internal static class GameInfo
         }
         catch { }
 
-        if (PlanetID != -1 && PlanetID != _lastPlanetID)
+        if (PlanetID == -1)
+        {
+            // reset so that rejoining the same planet triggers RefreshWhenReady again
+            _lastPlanetID = -1;
+        }
+        else if (PlanetID != _lastPlanetID)
         {
             _lastPlanetID = PlanetID;
             EnsureProjectFolder(PlanetID);
@@ -105,7 +109,7 @@ internal static class GameInfo
     {
         var path = PathHelper.GetProjectPath(planetID);
         Directory.CreateDirectory(path);
-        MelonLogger.Msg($"[GameInfo] Project folder: {path}");
+        KogamaStudio.Log.LogInfo($"[GameInfo] Project folder: {path}");
     }
 
     private static int GetPrototypeCount()

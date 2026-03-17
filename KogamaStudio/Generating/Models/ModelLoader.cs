@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -25,7 +25,7 @@ namespace KogamaStudio.Generating.Models
 
                 if (!File.Exists(filePath))
                 {
-                    MelonLogger.Error($"[ModelLoader] File not found: {filePath}");
+                    KogamaStudio.Log.LogError($"[ModelLoader] File not found: {filePath}");
                     return null;
                 }
 
@@ -66,7 +66,7 @@ namespace KogamaStudio.Generating.Models
             }
             catch (Exception ex )
             {
-                MelonLogger.Error($"[ModelLoader] Error loading model: {ex.Message}");
+                KogamaStudio.Log.LogError($"[ModelLoader] Error loading model: {ex.Message}");
                 return null;
             }
         }

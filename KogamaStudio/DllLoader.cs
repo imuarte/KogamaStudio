@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+
 using System.Runtime.InteropServices;
 using System.IO;
 
@@ -18,11 +18,11 @@ namespace KogamaStudio
             if (handle == IntPtr.Zero)
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                MelonLogger.Error($"Failed to load {dllPath}. Error code: {errorCode}");
+                KogamaStudio.Log.LogError($"Failed to load {dllPath}. Error code: {errorCode}");
             }
             else
             {
-                MelonLogger.Msg($"Loaded: {dllPath}");
+                KogamaStudio.Log.LogInfo($"Loaded: {dllPath}");
             }
         }
     }

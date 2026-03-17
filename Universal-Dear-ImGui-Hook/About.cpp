@@ -14,7 +14,7 @@ namespace About {
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-        ImGui::Text(u8"Special thanks to Becko, MauryDev");
+        ImGui::Text(u8"%s Becko, MauryDev, mindiro", T(u8"Special Thanks to:"));
         ImGui::Spacing();
 
         ImGui::End();

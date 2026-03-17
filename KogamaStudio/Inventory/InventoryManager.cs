@@ -1,6 +1,5 @@
 using HarmonyLib;
-using Il2Cpp;
-using MelonLoader;
+
 
 namespace KogamaStudio.Inventory;
 
@@ -17,7 +16,7 @@ internal class InventoryManager
     internal static void AddItem(int worldObjectID)
     {
         var game = MVGameControllerBase.Game.operationRequests;
-        if (game == null) { MelonLogger.Warning("[Inventory] MVNetworkGame not found"); return; }
+        if (game == null) { KogamaStudio.Log.LogWarning("[Inventory] MVNetworkGame not found"); return; }
         AddingToInventory = true;
         game.AddWorldObjectToInventory(worldObjectID);
         AddingToInventory = false;

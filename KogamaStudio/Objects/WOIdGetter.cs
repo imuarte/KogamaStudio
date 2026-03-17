@@ -1,9 +1,8 @@
 ﻿using System;
 using HarmonyLib;
-using Il2Cpp;
 using KogamaModFramework.Operations;
 using KogamaStudio.Tools.Properties;
-using MelonLoader;
+
 
 namespace KogamaStudio.Objects
 {

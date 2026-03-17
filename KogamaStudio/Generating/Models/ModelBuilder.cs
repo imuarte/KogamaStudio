@@ -1,5 +1,4 @@
-﻿using Il2Cpp;
-using MelonLoader;
+
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 using System.Collections;
@@ -18,7 +17,7 @@ namespace KogamaStudio.Generating.Models
         {
             if (IsBuilding)
             {
-                MelonLogger.Error("[ModelBuilder] Generation already in progress!");
+                KogamaStudio.Log.LogError("[ModelBuilder] Generation already in progress!");
                 yield break;
             }
 
@@ -37,12 +36,12 @@ namespace KogamaStudio.Generating.Models
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Error($"[ModelBuilder] Error: {ex.Message}");
+                    KogamaStudio.Log.LogError($"[ModelBuilder] Error: {ex.Message}");
                 }
 
                 if (targetModel == null)
                 {
-                    MelonLogger.Error("[ModelBuilder] Target model does not exist!");
+                    KogamaStudio.Log.LogError("[ModelBuilder] Target model does not exist!");
                     yield break;
                 }
 
@@ -52,20 +51,20 @@ namespace KogamaStudio.Generating.Models
                     if (CancelGeneration)
                     {
                         CancelGeneration = false;
-                        MelonLogger.Msg("[ModelBuilder] Generation canceled");
+                        KogamaStudio.Log.LogInfo("[ModelBuilder] Generation canceled");
                         yield break;
                     }
 
                     if (targetModel == null)
                     {
-                        MelonLogger.Error("[ModelBuilder] Target model was deleted!");
+                        KogamaStudio.Log.LogError("[ModelBuilder] Target model was deleted!");
                         CancelGeneration = true;
                         yield break;
                     }
 
                     if (MVGameControllerBase.IsPlaying)
                     {
-                        MelonLogger.Error("[ModelBuilder] Not in Edit mode!");
+                        KogamaStudio.Log.LogError("[ModelBuilder] Not in Edit mode!");
                         CancelGeneration = true;
                         yield break;
                     }
@@ -75,7 +74,7 @@ namespace KogamaStudio.Generating.Models
                         new Il2CppStructArray<byte>(cubeData.Materials)
                     );
 
-                    var position = new Il2CppMV.WorldObject.IntVector(cubeData.X, cubeData.Y, cubeData.Z);
+                    var position = new MV.WorldObject.IntVector(cubeData.X, cubeData.Y, cubeData.Z);
 
                     if (targetModel.ContainsCube(position))
                     {
@@ -92,13 +91,11 @@ namespace KogamaStudio.Generating.Models
                         targetModel.HandleDelta();
                         yield return new WaitForSecondsRealtime(1f / 60f * FrameDelay);
                     }
-
-
                 }
 
                 targetModel.HandleDelta();
                 PipeClient.SendCommand("generate_progress|1.0");
-                MelonLogger.Msg($"[ModelBuilder] Placed {cubes.Count} cubes");
+                KogamaStudio.Log.LogInfo($"[ModelBuilder] Placed {cubes.Count} cubes");
             }
             finally
             {

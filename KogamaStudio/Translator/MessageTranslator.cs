@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
 using Il2CppSystem.Linq;
-using MelonLoader;
-using Il2Cpp;
+
 
 namespace KogamaStudio.Translator
 {
@@ -116,7 +115,7 @@ namespace KogamaStudio.Translator
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"Chunk translation error: {ex.Message}");
+                    KogamaStudio.Log.LogWarning($"Chunk translation error: {ex.Message}");
                     retryCount++;
                     if (retryCount < maxRetries)
                         System.Threading.Thread.Sleep(1000);
@@ -158,7 +157,7 @@ namespace KogamaStudio.Translator
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"Translation error: {ex.Message}");
+                    KogamaStudio.Log.LogWarning($"Translation error: {ex.Message}");
                     retryCount++;
                     if (retryCount < maxRetries)
                         System.Threading.Thread.Sleep(1000);

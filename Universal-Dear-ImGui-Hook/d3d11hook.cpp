@@ -6,6 +6,8 @@
 #include "IconsFontAwesome6.h"
 
 namespace hooks_dx11 {
+
+    static std::string g_iniPath; // must persist for lifetime of context
     using Microsoft::WRL::ComPtr;
 
     PresentFn       oPresentD3D11 = nullptr;
@@ -117,6 +119,15 @@ namespace hooks_dx11 {
                 ImGui::CreateContext();
                 ImGuiIO& io = ImGui::GetIO(); (void)io;
 
+                {
+                    char localAppData[MAX_PATH] = {};
+                    SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, localAppData);
+                    std::string configDir = std::string(localAppData) + "\\KogamaStudio\\Config";
+                    SHCreateDirectoryExA(NULL, configDir.c_str(), NULL);
+                    g_iniPath = configDir + "\\layout.ini";
+                    io.IniFilename = g_iniPath.c_str();
+                    io.IniSavingRate = 5.0f;
+                }
 
                 Appearance::LoadSettings();
                 static const ImWchar glyphRanges[] = {
@@ -221,7 +232,8 @@ namespace hooks_dx11 {
             ImGui::NewFrame();
 
             ImGuiIO& io = ImGui::GetIO();
-            
+
+
             menu::Init();
 
             io.WantCaptureMouse = ImGui::IsAnyItemHovered() && !menu::viewportHovered;

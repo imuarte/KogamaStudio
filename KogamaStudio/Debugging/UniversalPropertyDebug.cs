@@ -1,5 +1,4 @@
-﻿using Il2Cpp;
-using MelonLoader;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,14 +17,14 @@ namespace KogamaStudio.Debugging
             var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(worldObjectID);
             if (wo != null)
             {
-                MelonLogger.Msg($"[DEBUG] {wo.GetType().Name} (ID:{worldObjectID}):");
+                KogamaStudio.Log.LogInfo($"[DEBUG] {wo.GetType().Name} (ID:{worldObjectID}):");
 
                 if (woData != null && woData.Count > 0)
                 {
                     foreach (var kvp in woData)
                     {
                         string key = kvp.Key?.ToString() ?? "null";
-                        MelonLogger.Msg($"  Key: '{key}'");
+                        KogamaStudio.Log.LogInfo($"  Key: '{key}'");
                     }
                 }
             }

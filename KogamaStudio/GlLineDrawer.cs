@@ -1,6 +1,5 @@
 using UnityEngine;
-using Il2Cpp;
-using MelonLoader;
+
 using System.Collections;
 using System.Collections.Generic;
 using KogamaStudio.Clipboard;
@@ -17,12 +16,12 @@ internal static class GlLineDrawer
     internal static void Init()
     {
         var shader = Shader.Find("Hidden/Internal-Colored");
-        if (shader == null) { MelonLogger.Msg("[GlLineDrawer] shader NULL"); return; }
+        if (shader == null) { KogamaStudio.Log.LogInfo("[GlLineDrawer] shader NULL"); return; }
         _mat = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
         _mat.SetInt("_ZTest", (int)UnityEngine.Rendering.CompareFunction.Always);
         _cam = MVGameControllerBase.MainCameraManager?.MainCamera;
-        MelonLogger.Msg($"[GlLineDrawer] cam={(_cam != null ? _cam.name : "NULL")}");
-        MelonCoroutines.Start(DrawCoroutine());
+        KogamaStudio.Log.LogInfo($"[GlLineDrawer] cam={(_cam != null ? _cam.name : "NULL")}");
+        KogamaStudioBehaviour.StartCo(DrawCoroutine());
     }
 
     internal static void BeginFrame() => _lines.Clear();

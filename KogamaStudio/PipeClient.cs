@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+
 using System;
 using System.Collections.Generic;
 using System.IO.Pipes;
@@ -29,7 +29,7 @@ namespace KogamaStudio
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Error($"[PipeClient] Error: {ex.Message}");
+                    KogamaStudio.Log.LogError($"[PipeClient] Error: {ex.Message}");
                 }
             });
         }
