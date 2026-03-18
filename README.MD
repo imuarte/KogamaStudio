@@ -19,7 +19,7 @@ A mod for KoGaMa that adds useful features to build mode.
 
 #### Step 2: Copy DLL files to Mods folder
 
-Copy these 4 files to your Mods folder:
+Copy these 3 files to your Mods folder:
 - `KogamaStudio.dll`
 - `KogamaStudio-ImGui-Hook.dll`
 - `KogamaModFramework.dll`
@@ -67,12 +67,6 @@ If the mod loads but the menu doesn't show, your antivirus is likely blocking th
 
 ### Fog on project
 The fog effect is a safety feature-MelonLoader has compatibility issues with KoGaMa, so fog prevents crashes in restricted areas. It will reduce when you enter the Shop.
-
-## Known Issues
-
-- Memory leak when reloading textures
-- Occasional crashes (MelonLoader compatibility)
-- False positives
 
 ## Credits
 
