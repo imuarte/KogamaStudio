@@ -16,6 +16,7 @@ namespace Appearance {
     std::string fontPath = u8"";
     float fontSize = 13.0f;
     char fontPathBuf[256] = u8"";
+    ImFont* headerFont = nullptr;
 
     std::string GetConfigPath() {
         char* buffer = nullptr;
@@ -98,22 +99,22 @@ namespace Appearance {
         ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowPos(ImVec2(1110, 20), ImGuiCond_FirstUseEver);
         ImGuiWindowFlags newFlags = ImGuiWindowFlags_NoCollapse;
-        if (ImGui::Begin((std::string(T(u8"Appearance")) + u8"###Appearance").c_str(), nullptr, newFlags))
+        if (ImGui::Begin((std::string(TR(u8"Appearance")) + u8"###Appearance").c_str(), nullptr, newFlags))
         {
-            ImGui::Text(T(u8"Theme:"));
-            if (ImGui::RadioButton(T(u8"Dark"), &selectedTheme, 0)) {
+            ImGui::Text(TR(u8"Theme:"));
+            if (ImGui::RadioButton(TR(u8"Dark"), &selectedTheme, 0)) {
                 ApplyTheme();
                 SaveSettings();
             }
-            if (ImGui::RadioButton(T(u8"Light"), &selectedTheme, 1)) {
+            if (ImGui::RadioButton(TR(u8"Light"), &selectedTheme, 1)) {
                 ApplyTheme();
                 SaveSettings();
             }
-            if (ImGui::RadioButton(T(u8"Classic"), &selectedTheme, 2)) {
+            if (ImGui::RadioButton(TR(u8"Classic"), &selectedTheme, 2)) {
                 ApplyTheme();
                 SaveSettings();
             }
-            if (ImGui::RadioButton(T(u8"Custom"), &selectedTheme, 3)) {
+            if (ImGui::RadioButton(TR(u8"Custom"), &selectedTheme, 3)) {
                 SaveSettings();
             }
             ImGui::Separator();
@@ -121,16 +122,16 @@ namespace Appearance {
             ImGuiStyle& style = ImGui::GetStyle();
             ImGuiIO& io = ImGui::GetIO();
 
-            if (ImGui::InputText(T(u8"Font Path"), fontPathBuf, sizeof(fontPathBuf))) {
+            if (ImGui::InputText(TR(u8"Font Path"), fontPathBuf, sizeof(fontPathBuf))) {
                 fontPath = fontPathBuf;
                 SaveSettings();
             }
 
-            if (ImGui::SliderFloat(T(u8"Font Size"), &fontSize, 8.0f, 24.0f)) {
+            if (ImGui::SliderFloat(TR(u8"Font Size"), &fontSize, 8.0f, 24.0f)) {
                 SaveSettings();
             }
 
-            if (ImGui::SliderFloat(T(u8"Rounding"), &rounding, 0.0f, 10.0f)) {
+            if (ImGui::SliderFloat(TR(u8"Rounding"), &rounding, 0.0f, 10.0f)) {
                 style.FrameRounding = rounding;
                 SaveSettings();
             }
@@ -149,9 +150,9 @@ namespace Appearance {
 
             ImGui::Separator();
 
-            ImGui::Text(T(u8"Language:"));
+            ImGui::Text(TR(u8"Language:"));
 
-            if (ImGui::Button(T(u8"Refresh"))) {
+            if (ImGui::Button(TR(u8"Refresh"))) {
                 Locale::RefreshLanguageList();
             }
             ImGui::SameLine();
@@ -159,17 +160,18 @@ namespace Appearance {
 
             int langCount = Locale::GetLanguageCount();
             for (int i = 0; i < langCount; i++) {
-                const char* lang = Locale::GetLanguageName(i);
-                bool sel = (strcmp(lang, Locale::GetCurrentLanguage()) == 0);
-                if (ImGui::RadioButton(lang, sel)) {
-                    Locale::SetLanguage(lang);
+                const char* code = Locale::GetLanguageName(i);
+                const char* display = Locale::GetDisplayName(code);
+                bool sel = (strcmp(code, Locale::GetCurrentLanguage()) == 0);
+                if (ImGui::RadioButton(display, sel)) {
+                    Locale::SetLanguage(code);
                     SaveSettings();
                 }
             }
 
             ImGui::Separator();
 
-            if (ImGui::Button(T(u8"Reset"), ImVec2(-1, 0))) {
+            if (ImGui::Button(TR(u8"Reset"), ImVec2(-1, 0))) {
                 selectedTheme = 0;
                 rounding = 0.0f;
                 fontPath = u8"";

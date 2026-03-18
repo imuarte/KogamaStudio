@@ -11,7 +11,7 @@ namespace Generate {
 	void Render()
 	{
 
-        if (ImGui::Button(T(u8"Open Folder"))) OpenFolder(u8"Generate\\Models");
+        if (ImGui::Button(TR(u8"Open Folder"))) OpenFolder(u8"Generate\\Models");
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -25,12 +25,12 @@ namespace Generate {
         }
         else
         {
-            ImGui::Text(T(u8"Progress"));
+            ImGui::Text(TR(u8"Progress"));
             ImGui::SameLine();
 
             ImGui::ProgressBar(pipe::generateProgress, ImVec2(-100, 0));
             ImGui::SameLine();
-            if (ImGui::Button(T(u8"Cancel"))) {
+            if (ImGui::Button(TR(u8"Cancel"))) {
                 SendCommand(u8"generate_cancel");
                 pipe::generateProgress = 0.0f;
             }

@@ -173,6 +173,7 @@ namespace menu {
         extern ImVec2 viewportImageMin;
         extern ImVec2 viewportImageMax;
         extern float menuBarHeight;
+        extern bool welcomeOpen; // true while welcome window is showing
         extern void Init();
         void SendCommand(const char* cmd);
 }

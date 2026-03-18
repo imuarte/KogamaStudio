@@ -9,7 +9,12 @@ namespace Locale {
     int GetLanguageCount();
     const char* GetLanguageName(int index);
     void RefreshLanguageList();
+
+    // Display names: "Polski (Polish)" etc.
+    const char* GetDisplayName(const char* langCode);
+    // Detect system language and return matching lang code (or "en")
+    const char* DetectSystemLanguage();
 }
 
 // Short global alias usable in every UI file
-inline const char* T(const char* key) { return Locale::T(key); }
+inline const char* TR(const char* key) { return Locale::T(key); }

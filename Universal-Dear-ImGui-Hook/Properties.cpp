@@ -32,7 +32,7 @@ namespace Properties {
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowPos(ImVec2(490, 20), ImGuiCond_FirstUseEver);
         ImGuiWindowFlags newFlags = ImGuiWindowFlags_NoCollapse;
-        if (ImGui::Begin((std::string(T(u8"Properties")) + u8"###Properties").c_str(), nullptr, newFlags))
+        if (ImGui::Begin((std::string(TR(u8"Properties")) + u8"###Properties").c_str(), nullptr, newFlags))
         {
             const auto& selIds = Explorer::GetSelectedIds();
             bool hasMulti = selIds.size() > 1;
@@ -50,16 +50,16 @@ namespace Properties {
 
             if (!hasObject && !hasItem && !hasMulti)
             {
-                ImGui::TextDisabled(T(u8"Nothing selected"));
+                ImGui::TextDisabled(TR(u8"Nothing selected"));
             }
 
             if (hasMulti)
             {
-                if (ImGui::CollapsingHeader(T(u8"Selection"), ImGuiTreeNodeFlags_DefaultOpen))
+                if (ImGui::CollapsingHeader(TR(u8"Selection"), ImGuiTreeNodeFlags_DefaultOpen))
                 {
-                    ImGui::TextDisabled("%s: %zu", T(u8"Objects"), selIds.size());
+                    ImGui::TextDisabled("%s: %zu", TR(u8"Objects"), selIds.size());
                     ImGui::Separator();
-                    if (ImGui::Button(T(u8"Group")))
+                    if (ImGui::Button(TR(u8"Group")))
                     {
                         std::string ids;
                         for (const auto& id : selIds)
@@ -74,8 +74,8 @@ namespace Properties {
                         ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingStretchProp |
                         ImGuiTableFlags_ScrollY, ImVec2(0, 200)))
                     {
-                        ImGui::TableSetupColumn(T(u8"Name"), ImGuiTableColumnFlags_WidthStretch, 0.6f);
-                        ImGui::TableSetupColumn(T(u8"ID"),   ImGuiTableColumnFlags_WidthStretch, 0.4f);
+                        ImGui::TableSetupColumn(TR(u8"Name"), ImGuiTableColumnFlags_WidthStretch, 0.6f);
+                        ImGui::TableSetupColumn(TR(u8"ID"),   ImGuiTableColumnFlags_WidthStretch, 0.4f);
                         ImGui::TableHeadersRow();
                         for (const auto& id : selIds)
                         {
@@ -93,7 +93,7 @@ namespace Properties {
             if (hasObject)
             {
                 if (selectionChanged) ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-                if (ImGui::CollapsingHeader(T(u8"Object")))
+                if (ImGui::CollapsingHeader(TR(u8"Object")))
                 {
                     if (ImGui::BeginTable(u8"##obj_info", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingStretchProp))
                     {
@@ -104,21 +104,21 @@ namespace Properties {
                             ImGui::TableSetColumnIndex(0); ImGui::TextDisabled("%s", key);
                             ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(val.c_str());
                         };
-                        Row(T(u8"Object ID"),   targetObjectId);
-                        Row(T(u8"Item ID"),  itemId  >= 0 ? std::to_string(itemId)  : u8"-");
-                        Row(T(u8"Group ID"), groupId >= 0 ? std::to_string(groupId) : u8"-");
+                        Row(TR(u8"Object ID"),   targetObjectId);
+                        Row(TR(u8"Item ID"),  itemId  >= 0 ? std::to_string(itemId)  : u8"-");
+                        Row(TR(u8"Group ID"), groupId >= 0 ? std::to_string(groupId) : u8"-");
                         ImGui::EndTable();
                     }
 
-                    if (ImGui::Button(T(u8"Remove"))) SendCommand(u8"properties_remove");
+                    if (ImGui::Button(TR(u8"Remove"))) SendCommand(u8"properties_remove");
                     ImGui::SameLine();
-                    if (ImGui::Button(T(u8"Teleport to"))) SendCommand((u8"recovery_teleport_to_object|" + targetObjectId).c_str());
+                    if (ImGui::Button(TR(u8"Teleport to"))) SendCommand((u8"recovery_teleport_to_object|" + targetObjectId).c_str());
                     ImGui::SameLine();
-                    if (ImGui::Button(T(u8"Add to Inventory"))) SendCommand((u8"inventory_add_object|" + targetObjectId).c_str());
+                    if (ImGui::Button(TR(u8"Add to Inventory"))) SendCommand((u8"inventory_add_object|" + targetObjectId).c_str());
                 }
 
                 if (selectionChanged) ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-                if (ImGui::CollapsingHeader(T(u8"Transform")))
+                if (ImGui::CollapsingHeader(TR(u8"Transform")))
                 {
                     auto DragPos = [&](const char* label, float& val) {
                         ImGui::PushItemWidth(-1);
@@ -145,12 +145,12 @@ namespace Properties {
                         return ImGui::IsItemDeactivatedAfterEdit();
                     };
 
-                    ImGui::Text(T(u8"Position"));
+                    ImGui::Text(TR(u8"Position"));
                     bool posXDone = DragPos(u8"X##pos_x", positionX);
                     bool posYDone = DragPos(u8"Y##pos_y", positionY);
                     bool posZDone = DragPos(u8"Z##pos_z", positionZ);
 
-                    ImGui::Text(T(u8"Rotation"));
+                    ImGui::Text(TR(u8"Rotation"));
                     bool rotXDone = DragRot(u8"X##rot_x", rotationX);
                     bool rotYDone = DragRot(u8"Y##rot_y", rotationY);
                     bool rotZDone = DragRot(u8"Z##rot_z", rotationZ);
@@ -175,25 +175,25 @@ namespace Properties {
                 if (isModel)
                 {
                     if (selectionChanged) ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-                    if (ImGui::CollapsingHeader(T(u8"Model")))
+                    if (ImGui::CollapsingHeader(TR(u8"Model")))
                     {
                         if (prototypeId >= 0)
                         {
-                            ImGui::TextDisabled(u8"%s: %d", T(u8"Prototype ID"), prototypeId);
+                            ImGui::TextDisabled(u8"%s: %d", TR(u8"Prototype ID"), prototypeId);
                             ImGui::Spacing();
                         }
 
                         bool building = pipe::isPasteBuilding;
 
-                        if (ImGui::Button(T(u8"Copy Cubes")))
+                        if (ImGui::Button(TR(u8"Copy Cubes")))
                             SendCommand(u8"clipboard_copy_model");
 
                         if (building) ImGui::BeginDisabled();
-                        if (ImGui::Button(T(u8"Paste Cubes")))
+                        if (ImGui::Button(TR(u8"Paste Cubes")))
                             SendCommand(u8"clipboard_paste_model");
                         if (building) ImGui::EndDisabled();
 
-                        if (ImGui::Checkbox(T(u8"Preview Paste Cubes"), &isPrevievPaste))
+                        if (ImGui::Checkbox(TR(u8"Preview Paste Cubes"), &isPrevievPaste))
                         {
                             if (isPrevievPaste) SendCommand(u8"clipboard_preview_paste_model|true");
                             else SendCommand(u8"clipboard_preview_paste_model|false");
@@ -221,14 +221,14 @@ namespace Properties {
                                     snprintf(etaBuf, sizeof(etaBuf), "%dm %ds", eta / 60, eta % 60);
                                 else
                                     snprintf(etaBuf, sizeof(etaBuf), "%ds", eta);
-                                ImGui::TextDisabled(T(u8"Time left: %s"), etaBuf);
+                                ImGui::TextDisabled(TR(u8"Time left: %s"), etaBuf);
                                 ImGui::SameLine();
                             }
 
                             ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.5f, 0.05f, 0.05f, 1.0f));
-                            if (ImGui::Button(T(u8"Cancel")))
+                            if (ImGui::Button(TR(u8"Cancel")))
                                 SendCommand(u8"clipboard_paste_cancel");
                             ImGui::PopStyleColor(3);
                         }
@@ -239,7 +239,7 @@ namespace Properties {
             if (hasItem)
             {
                 if (selectionChanged) ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-                if (ImGui::CollapsingHeader(T(u8"Item")))
+                if (ImGui::CollapsingHeader(TR(u8"Item")))
                 {
                     const Inventory::InventoryItem& item = Inventory::GetSelected();
 
@@ -261,15 +261,15 @@ namespace Properties {
                             ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(value.c_str());
                         };
 
-                        Row(T(u8"Item ID"),     item.id);
-                        Row(T(u8"Type ID"),     item.typeId);
-                        Row(T(u8"Category"),    item.categoryName);
-                        Row(T(u8"Category ID"), item.categoryId);
-                        Row(T(u8"Slot"),        std::to_string(item.slotPosition));
-                        Row(T(u8"Resellable"),  item.resellable ? T(u8"Yes") : T(u8"No"));
-                        Row(T(u8"Price"),       std::to_string(item.priceGold));
-                        Row(T(u8"Purchased"),   item.purchased ? T(u8"Yes") : T(u8"No"));
-                        Row(T(u8"Author ID"),   item.authorProfileId);
+                        Row(TR(u8"Item ID"),     item.id);
+                        Row(TR(u8"Type ID"),     item.typeId);
+                        Row(TR(u8"Category"),    item.categoryName);
+                        Row(TR(u8"Category ID"), item.categoryId);
+                        Row(TR(u8"Slot"),        std::to_string(item.slotPosition));
+                        Row(TR(u8"Resellable"),  item.resellable ? TR(u8"Yes") : TR(u8"No"));
+                        Row(TR(u8"Price"),       std::to_string(item.priceGold));
+                        Row(TR(u8"Purchased"),   item.purchased ? TR(u8"Yes") : TR(u8"No"));
+                        Row(TR(u8"Author ID"),   item.authorProfileId);
 
                         ImGui::EndTable();
                     }
@@ -277,7 +277,7 @@ namespace Properties {
                     if (!item.description.empty())
                     {
                         ImGui::Spacing();
-                        ImGui::TextDisabled(T(u8"Description"));
+                        ImGui::TextDisabled(TR(u8"Description"));
                         ImGui::Separator();
                         ImGui::TextWrapped("%s", item.description.c_str());
                     }
@@ -288,7 +288,7 @@ namespace Properties {
                     ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.5f, 0.05f, 0.05f, 1.0f));
-                    if (ImGui::Button(T(u8"Remove from Inventory"), ImVec2(-1, 0)))
+                    if (ImGui::Button(TR(u8"Remove from Inventory"), ImVec2(-1, 0)))
                         SendCommand((u8"inventory_remove|" + item.id).c_str());
                     ImGui::PopStyleColor(3);
                 }

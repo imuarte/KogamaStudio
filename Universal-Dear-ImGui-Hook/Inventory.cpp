@@ -69,9 +69,9 @@ namespace Inventory {
     void Render()
     {
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-        if (ImGui::Begin((std::string(T(u8"Inventory")) + u8"###Inventory").c_str(), nullptr, flags))
+        if (ImGui::Begin((std::string(TR(u8"Inventory")) + u8"###Inventory").c_str(), nullptr, flags))
         {
-            if (ImGui::Button(T(u8"Refresh")))
+            if (ImGui::Button(TR(u8"Refresh")))
             {
                 Clear();
                 SendCommand(u8"inventory_refresh");
@@ -83,14 +83,14 @@ namespace Inventory {
             if (!typing) typing = ImGui::IsItemActive();
 
             ImGui::Separator();
-            ImGui::TextDisabled("%s: %d", T(u8"Items"), CountTotal());
+            ImGui::TextDisabled("%s: %d", TR(u8"Items"), CountTotal());
 
             std::string filter = filterBuf;
             std::transform(filter.begin(), filter.end(), filter.begin(), ::tolower);
 
             if (itemsByCategory.empty())
             {
-                ImGui::TextDisabled(T(u8"No items"));
+                ImGui::TextDisabled(TR(u8"No items"));
             }
             else
             {

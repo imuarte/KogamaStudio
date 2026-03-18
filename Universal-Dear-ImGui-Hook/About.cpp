@@ -4,7 +4,7 @@
 
 namespace About {
 	void Render() {
-        if (!ImGui::Begin((std::string(T(u8"About")) + u8"###About").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
+        if (!ImGui::Begin((std::string(TR(u8"About")) + u8"###About").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
         {
             ImGui::End();
             return;
@@ -14,7 +14,7 @@ namespace About {
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-        ImGui::Text(u8"%s Becko, MauryDev, mindiro", T(u8"Special Thanks to:"));
+        ImGui::Text(u8"%s Becko, MauryDev, mindiro", TR(u8"Special Thanks to:"));
         ImGui::Spacing();
 
         ImGui::End();

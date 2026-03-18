@@ -45,20 +45,20 @@ namespace AppLog {
     void Render() {
         EnsureInit();
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-        if (!ImGui::Begin((std::string(T(u8"Console")) + u8"###Console").c_str(), nullptr, flags)) {
+        if (!ImGui::Begin((std::string(TR(u8"Console")) + u8"###Console").c_str(), nullptr, flags)) {
             ImGui::End();
             return;
         }
 
-        if (ImGui::Button(T(u8"Clear"))) {
+        if (ImGui::Button(TR(u8"Clear"))) {
             EnterCriticalSection(&cs);
             entries.clear();
             LeaveCriticalSection(&cs);
         }
         ImGui::SameLine();
-        ImGui::Checkbox(T(u8"Auto Scroll"), &autoScroll);
+        ImGui::Checkbox(TR(u8"Auto Scroll"), &autoScroll);
         ImGui::SameLine();
-        ImGui::Text(T(u8"Filter"));
+        ImGui::Text(TR(u8"Filter"));
         ImGui::SameLine();
         ImGui::PushItemWidth(200.0f);
         ImGui::InputText(u8"##ConsoleFilter", filterBuf, sizeof(filterBuf));

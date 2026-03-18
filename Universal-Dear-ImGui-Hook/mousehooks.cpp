@@ -4,6 +4,7 @@
 using SetCursorPos_t = BOOL (WINAPI*)(int,int);
 static SetCursorPos_t oSetCursorPos = nullptr;
 BOOL WINAPI hookSetCursorPos(int x,int y) {
+    if (menu::welcomeOpen) return TRUE;
     if (!pipe::cursorVisible) {
         return oSetCursorPos(x, y);
     }
@@ -13,6 +14,7 @@ BOOL WINAPI hookSetCursorPos(int x,int y) {
 using ClipCursor_t = BOOL (WINAPI*)(const RECT*);
 static ClipCursor_t oClipCursor = nullptr;
 BOOL WINAPI hookClipCursor(const RECT* rect) {
+    if (menu::welcomeOpen) return TRUE;
     if (!pipe::cursorVisible) {
         return TRUE;
     }

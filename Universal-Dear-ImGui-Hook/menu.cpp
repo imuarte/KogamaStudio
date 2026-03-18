@@ -22,11 +22,13 @@
 #include "Inventory.h"
 #include "History.h"
 #include "Worlds.h"
+#include "Welcome.h"
 
 namespace menu {
     bool isOpen = false;
     bool viewportHovered = false;
     bool blockMouseInput = false;
+    bool welcomeOpen = false;
     ImVec2 viewportImageMin = {};
     ImVec2 viewportImageMax = {};
     float menuBarHeight = 0.0f;
@@ -58,6 +60,23 @@ namespace menu {
 
         Recovery::RenderOverlay();
 
+        // Style setup (one-time)
+        static bool styled = false;
+        if (!styled) {
+            Appearance::LoadSettings();
+            ImGui::GetStyle().ScaleAllSizes(scale);
+            styled = true;
+            DebugLog(u8"[menu] Style applied.\n");
+        }
+
+        // Welcome window on first run (shows before F2)
+        Welcome::Init();
+        welcomeOpen = Welcome::IsOpen();
+        if (welcomeOpen) {
+            Welcome::Render();
+            return;
+        }
+
         if (!isOpen) {
             viewportHovered = false;
             return;
@@ -84,16 +103,6 @@ namespace menu {
             io.WantCaptureKeyboard = false;
         }
         typing = false;
-
-
-        // Style setup (one-time)
-        static bool styled = false;
-        if (!styled) {
-            Appearance::LoadSettings();
-            ImGui::GetStyle().ScaleAllSizes(scale);
-            styled = true;
-            DebugLog(u8"[menu] Style applied.\n");
-        }
 
         ImGuiViewport* mainViewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(mainViewport->WorkPos);
@@ -155,7 +164,7 @@ namespace menu {
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin((std::string(T(u8"Viewport")) + u8"###Viewport").c_str(), nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+        if (ImGui::Begin((std::string(TR(u8"Viewport")) + u8"###Viewport").c_str(), nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
         {
             ImVec2 contentSize = ImGui::GetContentRegionAvail();
             if (contentSize.x > 0 && contentSize.y > 0)
@@ -225,10 +234,10 @@ namespace menu {
         if (ImGui::BeginMainMenuBar())
         {
             menuBarHeight = ImGui::GetWindowSize().y;
-            if (ImGui::BeginMenu(T(u8"Windows")))
+            if (ImGui::BeginMenu(TR(u8"Windows")))
             {
-                ImGui::MenuItem(T(u8"Appearance"), nullptr, &Windows::appearanceOpen);
-                ImGui::MenuItem(T(u8"Console"), nullptr, &Windows::consoleOpen);
+                ImGui::MenuItem(TR(u8"Appearance"), nullptr, &Windows::appearanceOpen);
+                ImGui::MenuItem(TR(u8"Console"), nullptr, &Windows::consoleOpen);
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();

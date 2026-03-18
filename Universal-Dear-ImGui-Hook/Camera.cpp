@@ -28,10 +28,10 @@ namespace CameraPanel {
     void Render()
     {
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-        if (ImGui::Begin((std::string(T(u8"View")) + u8"###Camera").c_str(), nullptr, flags))
+        if (ImGui::Begin((std::string(TR(u8"View")) + u8"###Camera").c_str(), nullptr, flags))
         {
             // freecam
-            if (ImGui::Checkbox(T(u8"Freecam"), &freecamEnabled))
+            if (ImGui::Checkbox(TR(u8"Freecam"), &freecamEnabled))
             {
                 if (freecamEnabled) SendCommand(u8"camera_freecam_enable");
                 else                SendCommand(u8"camera_freecam_disable");
@@ -40,9 +40,9 @@ namespace CameraPanel {
             if (freecamEnabled)
             {
                 ImGui::Indent();
-                DragFloatInput(T(u8"Speed##fcam_speed"), freecamSpeed, u8"camera_freecam_speed", typing, 0.5f, 120.0f, u8"%.1f");
-                DragFloatInput(T(u8"Sensitivity##fcam_sens"), freecamSensitivity, u8"camera_freecam_sensitivity", typing, 0.05f, 120.0f, u8"%.2f");
-                if (ImGui::Checkbox(T(u8"Rotate with RMB"), &freecamRequireRmb))
+                DragFloatInput(TR(u8"Speed##fcam_speed"), freecamSpeed, u8"camera_freecam_speed", typing, 0.5f, 120.0f, u8"%.1f");
+                DragFloatInput(TR(u8"Sensitivity##fcam_sens"), freecamSensitivity, u8"camera_freecam_sensitivity", typing, 0.05f, 120.0f, u8"%.2f");
+                if (ImGui::Checkbox(TR(u8"Rotate with RMB"), &freecamRequireRmb))
                     SendCommand(freecamRequireRmb ? u8"camera_freecam_require_rmb|true" : u8"camera_freecam_require_rmb|false");
                 ImGui::Unindent();
             }
@@ -50,7 +50,7 @@ namespace CameraPanel {
             ImGui::Separator();
 
             // fov
-            if (ImGui::Checkbox(T(u8"Custom FOV"), &customFovEnabled))
+            if (ImGui::Checkbox(TR(u8"Custom FOV"), &customFovEnabled))
             {
                 if (customFovEnabled) SendCommand((std::string(u8"camera_fov|") + std::to_string(fov)).c_str());
                 else                  SendCommand(u8"camera_fov_reset");
@@ -66,7 +66,7 @@ namespace CameraPanel {
             ImGui::Separator();
 
             // custom distance
-            if (ImGui::Checkbox(T(u8"Custom Camera Distance"), &customDistanceEnabled))
+            if (ImGui::Checkbox(TR(u8"Custom Camera Distance"), &customDistanceEnabled))
             {
                 if (customDistanceEnabled)
                     SendCommand((std::string(u8"camera_distance|") + std::to_string(cameraDistance)).c_str());
@@ -84,13 +84,13 @@ namespace CameraPanel {
             ImGui::Separator();
 
             // camera mode
-            ImGui::Text(T(u8"Camera Mode"));
+            ImGui::Text(TR(u8"Camera Mode"));
             ImGui::SetNextItemWidth(-1);
             int previewIdx = selectedCameraMode;
-            const char* previewLabel = (previewIdx >= 0 && previewIdx < cameraModeCount) ? cameraModeNames[previewIdx] : T(u8"Default");
+            const char* previewLabel = (previewIdx >= 0 && previewIdx < cameraModeCount) ? cameraModeNames[previewIdx] : TR(u8"Default");
             if (ImGui::BeginCombo(u8"##cam_mode", previewLabel))
             {
-                if (ImGui::Selectable(T(u8"Default"), selectedCameraMode == -1))
+                if (ImGui::Selectable(TR(u8"Default"), selectedCameraMode == -1))
                 {
                     selectedCameraMode = -1;
                     SendCommand(u8"camera_mode_reset");
@@ -111,7 +111,7 @@ namespace CameraPanel {
             ImGui::Separator();
 
             // zoom
-            if (ImGui::Checkbox(T(u8"Zoom"), &zoomEnabled))
+            if (ImGui::Checkbox(TR(u8"Zoom"), &zoomEnabled))
             {
                 if (zoomEnabled)
                 {

@@ -63,26 +63,26 @@ namespace Clipboard {
         ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowPos(ImVec2(800, 20), ImGuiCond_FirstUseEver);
         ImGuiWindowFlags newFlags = ImGuiWindowFlags_NoCollapse;
-        if (ImGui::Begin((std::string(T(u8"Clipboard")) + u8"###Clipboard").c_str(), nullptr, newFlags))
+        if (ImGui::Begin((std::string(TR(u8"Clipboard")) + u8"###Clipboard").c_str(), nullptr, newFlags))
         {
-            ImGui::Text("%s: %d", T(u8"Cubes"), cubeCount);
+            ImGui::Text("%s: %d", TR(u8"Cubes"), cubeCount);
 
             ImGui::Separator();
-            if (ImGui::Button(T(u8"Save .kscubes"))) { std::string p = SaveDialog(); if (!p.empty()) SendCommand((std::string(u8"clipboard_save_to_file|") + p).c_str()); }
+            if (ImGui::Button(TR(u8"Save .kscubes"))) { std::string p = SaveDialog(); if (!p.empty()) SendCommand((std::string(u8"clipboard_save_to_file|") + p).c_str()); }
             ImGui::SameLine();
-            if (ImGui::Button(T(u8"Load .kscubes"))) { std::string p = OpenDialog(); if (!p.empty()) SendCommand((std::string(u8"clipboard_load_from_file|") + p).c_str()); }
+            if (ImGui::Button(TR(u8"Load .kscubes"))) { std::string p = OpenDialog(); if (!p.empty()) SendCommand((std::string(u8"clipboard_load_from_file|") + p).c_str()); }
             ImGui::Separator();
 
-            if (ImGui::CollapsingHeader(T(u8"Transform"))) {
+            if (ImGui::CollapsingHeader(TR(u8"Transform"))) {
                 // OFFSET
-                ImGui::Text(T(u8"Offset"));
+                ImGui::Text(TR(u8"Offset"));
                 menu::IntInput(u8"X##offset_x", offsetX, u8"clipboard_offset_x", typing);
                 menu::IntInput(u8"Y##offset_y", offsetY, u8"clipboard_offset_y", typing);
                 menu::IntInput(u8"Z##offset_z", offsetZ, u8"clipboard_offset_z", typing);
 
                 // ROTATION
                 const char* rotationOptions[] = { u8"0\u00B0", u8"90\u00B0", u8"180\u00B0", u8"270\u00B0"};
-                ImGui::Text(T(u8"Rotation"));
+                ImGui::Text(TR(u8"Rotation"));
                 ImGui::Combo(u8"X##rot_x", &rotationX, rotationOptions, 4);
                 if (ImGui::IsItemEdited()) {
                     SendCommand((u8"clipboard_rotation_x|" + std::to_string(rotationX * 90)).c_str());
@@ -97,7 +97,7 @@ namespace Clipboard {
                 }
 
                 // MIRROR
-                ImGui::Text(T(u8"Mirror"));
+                ImGui::Text(TR(u8"Mirror"));
                 ImGui::Checkbox(u8"X##mirror_x", &mirrorX);
                 if (ImGui::IsItemEdited()) {
                     SendCommand((u8"clipboard_mirror_x|" + std::string(mirrorX ? u8"true" : u8"false")).c_str());

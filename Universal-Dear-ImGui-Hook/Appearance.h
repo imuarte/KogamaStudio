@@ -15,4 +15,7 @@ namespace Appearance {
     extern std::string fontPath;
     extern char fontPathBuf[256];
     extern float fontSize;
+
+    // Large font for headers (set during init, may be null)
+    extern ImFont* headerFont;
 }

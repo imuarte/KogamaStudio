@@ -11,11 +11,11 @@ namespace ItemProperties {
     void Render()
     {
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-        if (ImGui::Begin((std::string(T(u8"Item Properties")) + u8"###ItemProperties").c_str(), nullptr, flags))
+        if (ImGui::Begin((std::string(TR(u8"Item Properties")) + u8"###ItemProperties").c_str(), nullptr, flags))
         {
             if (!Inventory::HasSelected())
             {
-                ImGui::TextDisabled(T(u8"Select an item from Inventory"));
+                ImGui::TextDisabled(TR(u8"Select an item from Inventory"));
                 ImGui::End();
                 return;
             }
@@ -40,15 +40,15 @@ namespace ItemProperties {
                     ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(value.c_str());
                 };
 
-                Row(T(u8"Item ID"),    item.id);
-                Row(T(u8"Type ID"),    item.typeId);
-                Row(T(u8"Category"),   item.categoryName);
-                Row(T(u8"Category ID"),item.categoryId);
-                Row(T(u8"Slot"),       std::to_string(item.slotPosition));
-                Row(T(u8"Resellable"), item.resellable ? T(u8"Yes") : T(u8"No"));
-                Row(T(u8"Price"),      std::to_string(item.priceGold));
-                Row(T(u8"Purchased"),  item.purchased ? T(u8"Yes") : T(u8"No"));
-                Row(T(u8"Author ID"),  item.authorProfileId);
+                Row(TR(u8"Item ID"),    item.id);
+                Row(TR(u8"Type ID"),    item.typeId);
+                Row(TR(u8"Category"),   item.categoryName);
+                Row(TR(u8"Category ID"),item.categoryId);
+                Row(TR(u8"Slot"),       std::to_string(item.slotPosition));
+                Row(TR(u8"Resellable"), item.resellable ? TR(u8"Yes") : TR(u8"No"));
+                Row(TR(u8"Price"),      std::to_string(item.priceGold));
+                Row(TR(u8"Purchased"),  item.purchased ? TR(u8"Yes") : TR(u8"No"));
+                Row(TR(u8"Author ID"),  item.authorProfileId);
 
                 ImGui::EndTable();
             }
@@ -56,7 +56,7 @@ namespace ItemProperties {
             if (!item.description.empty())
             {
                 ImGui::Spacing();
-                ImGui::TextDisabled(T(u8"Description"));
+                ImGui::TextDisabled(TR(u8"Description"));
                 ImGui::Separator();
                 ImGui::TextWrapped("%s", item.description.c_str());
             }
@@ -67,7 +67,7 @@ namespace ItemProperties {
             ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.5f, 0.05f, 0.05f, 1.0f));
-            if (ImGui::Button(T(u8"Remove from Inventory"), ImVec2(-1, 0)))
+            if (ImGui::Button(TR(u8"Remove from Inventory"), ImVec2(-1, 0)))
                 SendCommand((u8"inventory_remove|" + item.id).c_str());
             ImGui::PopStyleColor(3);
         }

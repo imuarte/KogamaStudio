@@ -43,16 +43,16 @@ namespace Players {
     void Render()
     {
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-        if (ImGui::Begin((std::string(T(u8"Players")) + u8"###Players").c_str(), nullptr, flags))
+        if (ImGui::Begin((std::string(TR(u8"Players")) + u8"###Players").c_str(), nullptr, flags))
         {
             if (playerList.empty()) {
-                ImGui::TextDisabled(T(u8"No players online"));
+                ImGui::TextDisabled(TR(u8"No players online"));
             }
             else {
                 for (const auto& p : playerList) {
                     ImGui::Text("%s", p.name.c_str());
                     ImGui::SameLine();
-                    if (ImGui::SmallButton((std::string(T(u8"Teleport")) + "##tp_" + p.id).c_str())) {
+                    if (ImGui::SmallButton((std::string(TR(u8"Teleport")) + "##tp_" + p.id).c_str())) {
                         SendCommand(("teleport_player|" + p.id).c_str());
                     }
                 }

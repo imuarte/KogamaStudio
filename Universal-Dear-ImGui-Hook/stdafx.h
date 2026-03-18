@@ -9,6 +9,7 @@
 #pragma comment(lib, "vulkan-1.lib")
 
 #include <windows.h>
+#include <shlobj.h>
 #include <vector>
 #include <cstring>
 #include <cstdio>
@@ -46,15 +47,46 @@ typedef uint32_t uintx_t;
 #include "namespaces.h"
 #include "UILocale.h"
 
-// Helper macro for debug logging via DebugView
-inline void DebugLog(const char* fmt, ...) {
-    if (!globals::enableDebugLog) {
-        return;
+// File-based logging + OutputDebugString
+inline FILE* GetLogFile() {
+    static FILE* logFile = nullptr;
+    static bool attempted = false;
+    if (!attempted) {
+        attempted = true;
+        char localAppData[MAX_PATH] = {};
+        if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, localAppData))) {
+            char baseDir[MAX_PATH];
+            snprintf(baseDir, MAX_PATH, "%s\\KogamaStudio", localAppData);
+            CreateDirectoryA(baseDir, NULL);
+            char logDir[MAX_PATH];
+            snprintf(logDir, MAX_PATH, "%s\\Logs", baseDir);
+            CreateDirectoryA(logDir, NULL);
+            char logPath[MAX_PATH];
+            snprintf(logPath, MAX_PATH, "%s\\imgui-hook.log", logDir);
+            fopen_s(&logFile, logPath, "w"); // overwrite each session
+        }
     }
-    char buf[512];
+    return logFile;
+}
+
+inline void DebugLog(const char* fmt, ...) {
+    char buf[1024];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
-    OutputDebugStringA(buf);
+
+    // Always write to file
+    FILE* f = GetLogFile();
+    if (f) {
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+        fprintf(f, "[%02d:%02d:%02d.%03d] %s", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, buf);
+        fflush(f);
+    }
+
+    // Also to OutputDebugString if enabled
+    if (globals::enableDebugLog) {
+        OutputDebugStringA(buf);
+    }
 }

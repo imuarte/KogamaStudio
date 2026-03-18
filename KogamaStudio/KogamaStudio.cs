@@ -96,8 +96,17 @@ namespace KogamaStudio
 
                     KogamaStudio.gameInitialized = true;
                     CommandHandler.LoadReferences();
-                    PipeClient.SendCommand("game_initialized");
-                    TextCommand.NotifyUser($"<b>KogamaStudio</b> v{KSVersion.Value} loaded!\nPress <b>F2</b> to open menu.");
+                    if (DllLoader.ImGuiLoaded)
+                    {
+                        PipeClient.SendCommand("game_initialized");
+                        TextCommand.NotifyUser($"<b>KogamaStudio</b> v{KSVersion.Value} loaded!\nPress <b>F2</b> to open menu.");
+                    }
+                    else
+                    {
+                        string err = DllLoader.LoadError ?? "Unknown error";
+                        TextCommand.NotifyUser($"<b>KogamaStudio</b> v{KSVersion.Value}: GUI failed to load!\n{err}\nCheck: %LOCALAPPDATA%\\KogamaStudio\\Logs\\imgui-hook.log");
+                        KogamaStudio.Log.LogError($"ImGui hook DLL not loaded: {err}");
+                    }
                     Players.PlayerList.Start();
                     GlLineDrawer.Init();
                     GameInfo.Init();

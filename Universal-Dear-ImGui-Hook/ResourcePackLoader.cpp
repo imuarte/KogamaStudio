@@ -1,6 +1,5 @@
-#include "stdafx.h"
-#define _CRT_SECURE_NO_WARNINGS
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#include "stdafx.h"
 #define STB_IMAGE_IMPLEMENTATION
 
 #include <d3d11.h>

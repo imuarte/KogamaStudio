@@ -32,62 +32,62 @@ namespace Tools {
 
     void Render()
     {
-        if (!ImGui::Begin((std::string(T(u8"Tools")) + u8"###Tools").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
+        if (!ImGui::Begin((std::string(TR(u8"Tools")) + u8"###Tools").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
         {
             ImGui::End();
             return;
         }
 
         // no build limit
-        if (ImGui::Checkbox(T(u8"No Build Limit"), &NoBuildLimit)) {
+        if (ImGui::Checkbox(TR(u8"No Build Limit"), &NoBuildLimit)) {
             if (NoBuildLimit) SendCommand(u8"option_no_build_limit|true");
             else SendCommand(u8"option_no_build_limit|false");
         }
 
         // single side painting
-        if (ImGui::Checkbox(T(u8"Single Side Painting"), &SingleSidePainting)) {
+        if (ImGui::Checkbox(TR(u8"Single Side Painting"), &SingleSidePainting)) {
             if (SingleSidePainting) SendCommand(u8"option_single_side_painting|true");
             else SendCommand(u8"option_single_side_painting|false");
         }
 
         // anti afk
-        if (ImGui::Checkbox(T(u8"Anti AFK"), &AntiAFK)) {
+        if (ImGui::Checkbox(TR(u8"Anti AFK"), &AntiAFK)) {
             if (AntiAFK) SendCommand(u8"option_anti_afk|true");
             else SendCommand(u8"option_anti_afk|false");
         }
 
         // destructibles unlock
-        if (ImGui::Checkbox(T(u8"Destructibles Unlock"), &DestructiblesUnlock)) {
+        if (ImGui::Checkbox(TR(u8"Destructibles Unlock"), &DestructiblesUnlock)) {
             if (DestructiblesUnlock) SendCommand(u8"option_destructibles_unlock|true");
             else SendCommand(u8"option_destructibles_unlock|false");
         }
 
         // blue mode
-        if (ImGui::Checkbox(T(u8"Blue Mode"), &BlueModeEnabled)) {
+        if (ImGui::Checkbox(TR(u8"Blue Mode"), &BlueModeEnabled)) {
             if (BlueModeEnabled) SendCommand(u8"option_blue_mode|true");
             else SendCommand(u8"option_blue_mode|false");
         }
 
         // speed
-        if (ImGui::Checkbox(T(u8"Custom Speed"), &CustomSpeedEnabled)) {
+        if (ImGui::Checkbox(TR(u8"Custom Speed"), &CustomSpeedEnabled)) {
             if (CustomSpeedEnabled) SendCommand(u8"option_custom_speed_enabled|true");
             else SendCommand(u8"option_custom_speed_enabled|false");
         }
 
         if (CustomSpeedEnabled) {
-            DragFloatInput(T(u8"Speed"), CustomSpeedValue, u8"option_custom_speed_value", typing, 0.1f, 100.0f, u8"%.2f");
+            DragFloatInput(TR(u8"Speed"), CustomSpeedValue, u8"option_custom_speed_value", typing, 0.1f, 100.0f, u8"%.2f");
         }
 
 
         // custom grid size
-        if (ImGui::Checkbox(T(u8"Custom Grid Size"), &CustomGridSizeEnabled)) {
+        if (ImGui::Checkbox(TR(u8"Custom Grid Size"), &CustomGridSizeEnabled)) {
             if (CustomGridSizeEnabled) SendCommand(u8"option_custom_grid_size_enabled|true");
             else SendCommand(u8"option_custom_grid_size_enabled|false");
         }
 
         if (CustomGridSizeEnabled) {
             ImGui::PushItemWidth(100);
-            ImGui::InputFloat(T(u8"Size"), &CustomGridSizeValue);
+            ImGui::InputFloat(TR(u8"Size"), &CustomGridSizeValue);
             ImGui::PopItemWidth();
 
             if (!typing) typing = ImGui::IsItemActive();
@@ -98,14 +98,14 @@ namespace Tools {
         }
 
         // custom rot step
-        if (ImGui::Checkbox(T(u8"Custom Rotation Step"), &CustomRotStepEnabled)) {
+        if (ImGui::Checkbox(TR(u8"Custom Rotation Step"), &CustomRotStepEnabled)) {
             if (CustomRotStepEnabled) SendCommand(u8"option_custom_rot_step_enabled|true");
             else SendCommand(u8"option_custom_rot_step_enabled|false");
         }
 
         if (CustomRotStepEnabled) {
             ImGui::PushItemWidth(100);
-            ImGui::InputFloat(T(u8"Step"), &CustomRotStepValue);
+            ImGui::InputFloat(TR(u8"Step"), &CustomRotStepValue);
             ImGui::PopItemWidth();
 
             if (!typing) typing = ImGui::IsItemActive();
@@ -116,7 +116,7 @@ namespace Tools {
         }
 
         // unlimited config
-        if (ImGui::Checkbox(T(u8"Unlimited Config"), &UnlimitedConfigEnabled)) {
+        if (ImGui::Checkbox(TR(u8"Unlimited Config"), &UnlimitedConfigEnabled)) {
             if (UnlimitedConfigEnabled) SendCommand(u8"option_unlimited_config_enabled|true");
             else SendCommand(u8"option_unlimited_config_enabled|false");
         }
@@ -124,7 +124,7 @@ namespace Tools {
         if (UnlimitedConfigEnabled) {
             ImGui::PushItemWidth(100);
             ImGui::PushID(u8"unlimited_min");
-            ImGui::InputFloat(T(u8"Min"), &UnlimitedConfigMin);
+            ImGui::InputFloat(TR(u8"Min"), &UnlimitedConfigMin);
             ImGui::PopID();
             ImGui::PopItemWidth();
             if (!typing) typing = ImGui::IsItemActive();
@@ -134,7 +134,7 @@ namespace Tools {
 
             ImGui::PushItemWidth(100);
             ImGui::PushID(u8"unlimited_max");
-            ImGui::InputFloat(T(u8"Max"), &UnlimitedConfigMax);
+            ImGui::InputFloat(TR(u8"Max"), &UnlimitedConfigMax);
             ImGui::PopID();
             ImGui::PopItemWidth();
             if (!typing) typing = ImGui::IsItemActive();
@@ -144,14 +144,14 @@ namespace Tools {
         }
 
         //custom model scale
-        if (ImGui::Checkbox(T(u8"Custom Model Scale"), &CustomModelScaleEnabled)) {
+        if (ImGui::Checkbox(TR(u8"Custom Model Scale"), &CustomModelScaleEnabled)) {
             if (CustomModelScaleEnabled) SendCommand(u8"option_custom_model_scale_enabled|true");
             else SendCommand(u8"option_custom_model_scale_enabled|false");
         }
 
         if (CustomModelScaleEnabled) {
             ImGui::PushItemWidth(100);
-            ImGui::InputFloat(T(u8"Scale"), &CustomModelScaleValue, 0.0f, 0.0f, u8"%.6g");
+            ImGui::InputFloat(TR(u8"Scale"), &CustomModelScaleValue, 0.0f, 0.0f, u8"%.6g");
             ImGui::PopItemWidth();
             if (!typing) typing = ImGui::IsItemActive();
             if (ImGui::IsItemEdited()) {
@@ -159,27 +159,6 @@ namespace Tools {
                 snprintf(buffer, sizeof(buffer), u8"%.15g", CustomModelScaleValue);
                 SendCommand((u8"option_custom_model_scale_value|" + std::string(buffer)).c_str());
             }
-        }
-
-        // custom wo scale
-        if (ImGui::Checkbox(T(u8"Custom WO Scale"), &CustomWOScaleEnabled)) {
-            SendCommand(CustomWOScaleEnabled ? u8"option_custom_wo_scale_enabled|true" : u8"option_custom_wo_scale_enabled|false");
-        }
-
-        if (CustomWOScaleEnabled) {
-            ImGui::PushItemWidth(180);
-            if (ImGui::InputFloat3(T(u8"WO Scale"), CustomWOScaleValue, u8"%.6g")) {
-                if (!typing) typing = true;
-                char buf[96];
-                snprintf(buf, sizeof(buf), "%.15g", (double)CustomWOScaleValue[0]);
-                SendCommand((u8"option_custom_wo_scale_x|" + std::string(buf)).c_str());
-                snprintf(buf, sizeof(buf), "%.15g", (double)CustomWOScaleValue[1]);
-                SendCommand((u8"option_custom_wo_scale_y|" + std::string(buf)).c_str());
-                snprintf(buf, sizeof(buf), "%.15g", (double)CustomWOScaleValue[2]);
-                SendCommand((u8"option_custom_wo_scale_z|" + std::string(buf)).c_str());
-            }
-            if (!typing) typing = ImGui::IsItemActive();
-            ImGui::PopItemWidth();
         }
 
         if (ImGui::Button("Test")) {

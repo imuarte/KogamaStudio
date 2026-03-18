@@ -13,14 +13,14 @@ namespace Translate {
 
 	void Render()
 	{
-        if (!ImGui::Begin((std::string(T(u8"Translate")) + u8"###Translate").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
+        if (!ImGui::Begin((std::string(TR(u8"Translate")) + u8"###Translate").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
         {
             ImGui::End();
             return;
         }
 
         // translate own messages
-		if (ImGui::Checkbox(T(u8"Translate Own Messages"), &TranslateOwnMessagesEnabled)) {
+		if (ImGui::Checkbox(TR(u8"Translate Own Messages"), &TranslateOwnMessagesEnabled)) {
 			if (TranslateOwnMessagesEnabled) SendCommand(u8"translate_own_messages_enabled|true");
 			else SendCommand(u8"translate_own_messages_enabled|false");
 		}
@@ -29,7 +29,7 @@ namespace Translate {
 			ImGui::Indent();
 			ImGui::PushItemWidth(100);
             ImGui::PushID(u8"own");
-			ImGui::InputText(T(u8"Language"), TranslateOwnMessagesLanguage, sizeof(TranslateOwnMessagesLanguage));
+			ImGui::InputText(TR(u8"Language"), TranslateOwnMessagesLanguage, sizeof(TranslateOwnMessagesLanguage));
             ImGui::PopID();
 			ImGui::PopItemWidth();
 
@@ -42,7 +42,7 @@ namespace Translate {
 		}
 
         // translate text cubes
-		if (ImGui::Checkbox(T(u8"Translate Text Cubes"), &TranslateTextCubesEnabled)) {
+		if (ImGui::Checkbox(TR(u8"Translate Text Cubes"), &TranslateTextCubesEnabled)) {
 			if (TranslateTextCubesEnabled) SendCommand(u8"translate_text_cubes_enabled|true");
 			else SendCommand(u8"translate_text_cubes_enabled|false");
 		}
@@ -51,7 +51,7 @@ namespace Translate {
 			ImGui::Indent();
 			ImGui::PushItemWidth(100);
             ImGui::PushID(u8"cubes");
-			ImGui::InputText(T(u8"Language"), TranslateCubesLanguage, sizeof(TranslateCubesLanguage));
+			ImGui::InputText(TR(u8"Language"), TranslateCubesLanguage, sizeof(TranslateCubesLanguage));
             ImGui::PopID();
 			ImGui::PopItemWidth();
 
@@ -63,7 +63,7 @@ namespace Translate {
 
 			ImGui::SameLine();
 
-			if (ImGui::Button(T(u8"Translate"))) SendCommand(u8"translate_text_cubes_translate");
+			if (ImGui::Button(TR(u8"Translate"))) SendCommand(u8"translate_text_cubes_translate");
 
 			ImGui::Unindent();
 		}

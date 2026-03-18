@@ -24,8 +24,11 @@ namespace inputhook {
 
     static bool ShouldBlockMouseButton(int vKey)
     {
-        return (vKey == VK_LBUTTON || vKey == VK_RBUTTON || vKey == VK_MBUTTON)
-            && menu::isOpen && pipe::openMenu && menu::blockMouseInput;
+        if (!(vKey == VK_LBUTTON || vKey == VK_RBUTTON || vKey == VK_MBUTTON))
+            return false;
+        if (menu::welcomeOpen)
+            return true;
+        return menu::isOpen && pipe::openMenu && menu::blockMouseInput;
     }
 
     static SHORT WINAPI hookGetAsyncKeyState(int vKey)
@@ -58,7 +61,7 @@ namespace inputhook {
         float screenY = (float)lpPoint->y;
 
         // if menu closed or remapping disabled, unfreeze and pass through
-        if (!remapCursor || !menu::isOpen || !pipe::openMenu || !pipe::cursorVisible)
+        if (menu::welcomeOpen || !remapCursor || !menu::isOpen || !pipe::openMenu || !pipe::cursorVisible)
         {
             sCachedValid = false;
             return result;
@@ -175,10 +178,21 @@ namespace inputhook {
 
     LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
-        if (menu::isOpen && pipe::openMenu)
+        if ((menu::isOpen && pipe::openMenu) || menu::welcomeOpen)
         {
             if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
                 return TRUE;
+
+            // When welcome window is open, block all game input
+            if (menu::welcomeOpen)
+            {
+                if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
+                    (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST) ||
+                    uMsg == WM_CHAR || uMsg == WM_INPUT)
+                    return TRUE;
+                return CallWindowProc(sOriginalWndProc, hwnd, uMsg, wParam, lParam);
+            }
+
             ImGuiIO& io = ImGui::GetIO();
 
             if (uMsg == WM_INPUT)

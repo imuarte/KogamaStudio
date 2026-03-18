@@ -16,6 +16,7 @@ namespace hooks_dx11 {
     static void* pPresentTarget = nullptr;
     static void* pPresent1Target = nullptr;
     static void* pResizeBuffersTarget = nullptr;
+    static bool  hooksPlaced = false;
 
     ID3D11Device* gDevice = nullptr;
     static ID3D11DeviceContext* gContext = nullptr;
@@ -162,6 +163,20 @@ namespace hooks_dx11 {
                     io.Fonts->AddFontFromFileTTF(faPath.c_str(),
                         Appearance::fontSize > 0 ? Appearance::fontSize : 13.0f,
                         &cfg, ranges);
+                }
+
+                // Large font for headers (same font, bigger size, added AFTER FA merge)
+                {
+                    float headerSize = (Appearance::fontSize > 0 ? Appearance::fontSize : 13.0f) * 2.0f;
+                    if (fontLoaded && !Appearance::fontPath.empty()) {
+                        Appearance::headerFont = io.Fonts->AddFontFromFileTTF(Appearance::fontPath.c_str(), headerSize, nullptr, glyphRanges);
+                    }
+                    if (!Appearance::headerFont) {
+                        Appearance::headerFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\consola.ttf", headerSize, nullptr, glyphRanges);
+                    }
+                    if (!Appearance::headerFont) {
+                        Appearance::headerFont = io.Fonts->AddFontDefault();
+                    }
                 }
 
                 io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -354,6 +369,7 @@ namespace hooks_dx11 {
 
             MH_EnableHook(pPresentTarget);
             MH_EnableHook(pResizeBuffersTarget);
+            hooksPlaced = true;
             DebugLog("[d3d11hook] Hooks placed Present@%p Present1@%p ResizeBuffers@%p\n", pPresentTarget, present1Addr, pResizeBuffersTarget);
             swapChain->Release();
             device->Release();
@@ -371,6 +387,7 @@ namespace hooks_dx11 {
     void release()
     {
         DebugLog("[d3d11hook] Releasing resources\n");
+        hooksPlaced = false;
 
         inputhook::RemoveGetCursorPosHook();
         if (globals::mainWindow)
@@ -417,7 +434,7 @@ namespace hooks_dx11 {
 
     bool IsInitialized()
     {
-        return gInitialized;
+        return hooksPlaced;
     }
 
     ID3D11ShaderResourceView* GetGameFrameSRV()

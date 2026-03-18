@@ -266,7 +266,12 @@ void Uninject()
 // Thread entry: initialize MinHook and start hook setup
 static DWORD WINAPI onAttach(LPVOID lpParameter)
 {
-    DebugLog("[DllMain] onAttach starting.\n");
+    DebugLog("[DllMain] onAttach starting. PID=%lu TID=%lu\n", GetCurrentProcessId(), GetCurrentThreadId());
+
+    // Log which graphics modules are currently loaded
+    DebugLog("[DllMain] Module check: d3d11.dll=%p d3d12.dll=%p dxgi.dll=%p d3d9.dll=%p d3d10.dll=%p vulkan-1.dll=%p\n",
+        GetModuleHandleA("d3d11.dll"), GetModuleHandleA("d3d12.dll"), GetModuleHandleA("dxgi.dll"),
+        GetModuleHandleA("d3d9.dll"), GetModuleHandleA("d3d10.dll"), GetModuleHandleA("vulkan-1.dll"));
 
     // Initialize MinHook
     {
@@ -280,10 +285,13 @@ static DWORD WINAPI onAttach(LPVOID lpParameter)
     }
 
     // Detect loaded rendering backends and initialize hooks accordingly
+    DebugLog("[DllMain] Preferred backend: %d\n", static_cast<int>(globals::preferredBackend));
     if (globals::preferredBackend != globals::Backend::None)
         TryInitBackend(globals::preferredBackend);
     else
         TryInitializeFrom(globals::Backend::Vulkan);
+
+    DebugLog("[DllMain] Active backend after init: %d\n", static_cast<int>(globals::activeBackend));
 
     // Hook LoadLibraryA/W to catch backends loaded after injection
     HMODULE k32 = GetModuleHandleA("kernel32.dll");

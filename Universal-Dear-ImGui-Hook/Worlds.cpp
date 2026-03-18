@@ -49,11 +49,11 @@ namespace Worlds {
     void Render()
     {
         ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin((std::string(T(u8"Worlds")) + u8"###Worlds").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
+        if (ImGui::Begin((std::string(TR(u8"Worlds")) + u8"###Worlds").c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
         {
             if (!IsExtendedAvailable())
             {
-                ImGui::TextDisabled(T(u8"KogamaStudioExtended not loaded"));
+                ImGui::TextDisabled(TR(u8"KogamaStudioExtended not loaded"));
             }
             else if (pipe::isWorldLoading)
             {
@@ -74,19 +74,19 @@ namespace Worlds {
                         snprintf(etaBuf, sizeof(etaBuf), "%dm %ds", eta / 60, eta % 60);
                     else
                         snprintf(etaBuf, sizeof(etaBuf), "%ds", eta);
-                    ImGui::TextDisabled(T(u8"Time left: %s"), etaBuf);
+                    ImGui::TextDisabled(TR(u8"Time left: %s"), etaBuf);
                 }
             }
             else
             {
-                if (ImGui::Button(T(u8"Save .ksobjects")))
+                if (ImGui::Button(TR(u8"Save .ksobjects")))
                 {
                     std::string p = SaveDialog();
                     if (!p.empty())
                         SendCommandExtended((std::string(u8"world_save_to_file|") + p).c_str());
                 }
                 ImGui::SameLine();
-                if (ImGui::Button(T(u8"Load .ksobjects")))
+                if (ImGui::Button(TR(u8"Load .ksobjects")))
                 {
                     std::string p = OpenDialog();
                     if (!p.empty())

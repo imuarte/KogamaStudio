@@ -177,5 +177,46 @@
     "Zoom": "Przybliżenie",
 
     "Camera Mode": "Tryb kamery",
-    "Default": "Domyślny"
+    "Default": "Domyślny",
+    "Speed##fcam_speed": "Prędkość##fcam_speed",
+    "Sensitivity##fcam_sens": "Czułość##fcam_sens",
+
+    "Worlds": "Światy",
+    "KogamaStudioExtended not loaded": "KogamaStudioExtended nie załadowane",
+    "Save .ksobjects": "Zapisz .ksobjects",
+    "Load .ksobjects": "Wczytaj .ksobjects",
+
+    "Item Properties": "Właściwości przedmiotu",
+    "Select an item from Inventory": "Wybierz przedmiot z ekwipunku",
+
+    "Selection": "Zaznaczenie",
+    "Group": "Grupa",
+    "Name": "Nazwa",
+    "ID": "ID",
+    "Group ID": "ID grupy",
+    "Prototype ID": "ID prototypu",
+
+    "Parent Group ID": "ID grupy nadrzędnej",
+    "Rotation (euler)": "Obrót (euler)",
+    "Local owner": "Lokalny właściciel",
+    "Create": "Utwórz",
+
+    "Add Group here": "Dodaj grupę tutaj",
+    "Add Group inside": "Dodaj grupę wewnątrz",
+    "Add object": "Dodaj obiekt",
+
+    "Sort": "Sortuj",
+    "Sort by": "Sortuj według",
+    "Custom order": "Własna kolejność",
+    "Alphabetical": "Alfabetycznie",
+    "Distance from camera": "Odległość od kamery",
+    "Ascending": "Rosnąco",
+    "Descending": "Malejąco",
+
+    "Welcome to KogamaStudio! This version introduces many new features and changes, which may also mean new bugs. If you encounter any issues, please report them.": "Witaj w KogamaStudio! Ta wersja wprowadza wiele nowych funkcji i zmian, co może również oznaczać nowe błędy. Jeśli napotkasz jakiekolwiek problemy, zgłoś je.",
+    "Press F2 to open/close the menu at any time.": "Naciśnij F2, aby otworzyć/zamknąć menu w dowolnym momencie.",
+    "Select language:": "Wybierz język:",
+    "Continue": "Kontynuuj",
+    "Welcome": "Witamy",
+    "Join our Discord community:": "Dołącz do naszego Discorda:"
 }

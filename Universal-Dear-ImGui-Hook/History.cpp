@@ -110,7 +110,7 @@ namespace History {
     void Render()
     {
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-        if (ImGui::Begin((std::string(T(u8"History")) + u8"###History").c_str(), nullptr, flags))
+        if (ImGui::Begin((std::string(TR(u8"History")) + u8"###History").c_str(), nullptr, flags))
         {
             bool canUndo = false, canRedo = false;
             {
@@ -128,7 +128,7 @@ namespace History {
             }
 
             if (!canUndo) ImGui::BeginDisabled();
-            if (ImGui::Button(T(u8"Undo")))
+            if (ImGui::Button(TR(u8"Undo")))
             {
                 std::lock_guard<std::mutex> lock(mtx);
                 for (auto& e : entries)
@@ -145,7 +145,7 @@ namespace History {
             ImGui::SameLine();
 
             if (!canRedo) ImGui::BeginDisabled();
-            if (ImGui::Button(T(u8"Redo")))
+            if (ImGui::Button(TR(u8"Redo")))
             {
                 std::lock_guard<std::mutex> lock(mtx);
                 Entry* target = nullptr;
@@ -165,7 +165,7 @@ namespace History {
             if (!canRedo) ImGui::EndDisabled();
 
             ImGui::SameLine();
-            if (ImGui::Button(T(u8"Clear")))
+            if (ImGui::Button(TR(u8"Clear")))
             {
                 std::lock_guard<std::mutex> lock(mtx);
                 entries.clear();
@@ -177,7 +177,7 @@ namespace History {
 
             if (entries.empty())
             {
-                ImGui::TextDisabled(T(u8"No actions"));
+                ImGui::TextDisabled(TR(u8"No actions"));
             }
             else
             {
@@ -212,7 +212,7 @@ namespace History {
                             SendUndo(e);
                         }
                         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-                            ImGui::SetTooltip(T(u8"Undo"));
+                            ImGui::SetTooltip(TR(u8"Undo"));
                         if (wasUndone) ImGui::EndDisabled();
 
                         ImGui::SameLine();
@@ -226,7 +226,7 @@ namespace History {
                             SendRedo(e);
                         }
                         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-                            ImGui::SetTooltip(T(u8"Redo"));
+                            ImGui::SetTooltip(TR(u8"Redo"));
                         if (!wasUndone) ImGui::EndDisabled();
                     }
                 }

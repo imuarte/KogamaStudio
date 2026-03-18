@@ -425,23 +425,6 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                 case "option_custom_model_scale_value":
                     CustomModelScale.Scale = float.Parse(param);
                     break;
-                // CUSTOM WO SCALE
-                case "option_custom_wo_scale_enabled":
-                    CustomWOScale.Enabled = param == "true";
-                    if (param == "true") CustomWOScale.RequestNewGroupIfNecessary();
-                    break;
-                case "option_custom_wo_scale_x":
-                    CustomWOScale.Scale = new Vector3(float.Parse(param, System.Globalization.CultureInfo.InvariantCulture), CustomWOScale.Scale.y, CustomWOScale.Scale.z);
-                    if (CustomWOScale.Enabled) CustomWOScale.RequestNewGroupIfNecessary();
-                    break;
-                case "option_custom_wo_scale_y":
-                    CustomWOScale.Scale = new Vector3(CustomWOScale.Scale.x, float.Parse(param, System.Globalization.CultureInfo.InvariantCulture), CustomWOScale.Scale.z);
-                    if (CustomWOScale.Enabled) CustomWOScale.RequestNewGroupIfNecessary();
-                    break;
-                case "option_custom_wo_scale_z":
-                    CustomWOScale.Scale = new Vector3(CustomWOScale.Scale.x, CustomWOScale.Scale.y, float.Parse(param, System.Globalization.CultureInfo.InvariantCulture));
-                    if (CustomWOScale.Enabled) CustomWOScale.RequestNewGroupIfNecessary();
-                    break;
 
                 case "generate_model":
                     if (!ModelBuilder.IsBuilding)
@@ -485,33 +468,20 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     var rot   = UnityEngine.Quaternion.Euler(F(4), F(5), F(6));
                     var scale = new UnityEngine.Vector3(F(7, 1f), F(8, 1f), F(9, 1f));
                     bool lo   = p.Length > 10 && p[10] == "1";
+                    int countBefore = MVGameControllerBase.WOCM?.worldObjects?.Count ?? 0;
                     MVGameControllerBase.OperationRequests.RequestBuiltInItem(
                         BuiltInItem.Group, groupId,
                         new Il2CppSystem.Collections.Generic.Dictionary<Il2CppSystem.Object, Il2CppSystem.Object>(),
                         pos, rot, scale, lo, true);
-                    break;
-                }
-                case "explorer_create_cubemodel":
-                {
-                    // format: posX|posY|posZ|rotX|rotY|rotZ|scale|materialId
-                    // Always uses root group (like the game's own OnAddNewPrototype)
-                    var p = param.Split('|');
-                    float F(int i, float def = 0f) => p.Length > i && float.TryParse(p[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v) ? v : def;
-                    var pos   = new UnityEngine.Vector3(F(0), F(1), F(2));
-                    var rot   = UnityEngine.Quaternion.Euler(F(3), F(4), F(5));
-                    float scale = F(6, 1f);
-                    int matId = p.Length > 7 && int.TryParse(p[7], out int m) ? m
-                                : (int)CubeModelingStateMachine.CurrentMaterialId;
-                    int profileId = MVGameControllerBase.Game?.LocalPlayer?.ProfileID
-                                    ?? GameInfo.ProfileID;
-                    int rootId = MVGameControllerBase.WOCM.RootGroup.Id;
-                    var customData = new Il2CppSystem.Collections.Generic.Dictionary<Il2CppSystem.Object, Il2CppSystem.Object>();
-                    customData.Add(BoxInt(1), BoxFloat(scale));
-                    customData.Add(BoxInt(2), BoxInt(matId));
-                    customData.Add(BoxInt(3), BoxInt(profileId));
-                    MVGameControllerBase.OperationRequests.RequestBuiltInItem(
-                        BuiltInItem.CubeModel, rootId, customData,
-                        pos, rot, UnityEngine.Vector3.one * scale, false, true);
+                    // Apply scale locally — server creates object but local client
+                    // doesn't show non-1 scale until rejoin, so we find and fix it
+                    if (scale != UnityEngine.Vector3.one)
+                    {
+                        KogamaStudio.RunOnMainThread(() =>
+                        {
+                            KogamaStudioBehaviour.StartCo(ApplyScaleToNewObject(countBefore, scale));
+                        });
+                    }
                     break;
                 }
                 case "explorer_set_order":
@@ -910,35 +880,35 @@ new System.Collections.Generic.Queue<(int id, string text)>();
         }
     }
 
-    private static IntPtr _int32Klass  = IntPtr.Zero;
-    private static IntPtr _singleKlass = IntPtr.Zero;
-
-    private static unsafe IntPtr FindKlass(ref IntPtr cache, string ns, string name)
+    private static System.Collections.IEnumerator ApplyScaleToNewObject(int countBefore, UnityEngine.Vector3 scale)
     {
-        if (cache != IntPtr.Zero) return cache;
-        IntPtr domain = IL2CPP.il2cpp_domain_get();
-        uint size = 0;
-        IntPtr* assemblies = IL2CPP.il2cpp_domain_get_assemblies(domain, ref size);
-        for (uint i = 0; i < size; i++)
+        // Wait for the new object to appear (up to 3 seconds)
+        var wocm = MVGameControllerBase.WOCM;
+        for (int i = 0; i < 60; i++)
         {
-            IntPtr image = IL2CPP.il2cpp_assembly_get_image(assemblies[i]);
-            IntPtr klass = IL2CPP.il2cpp_class_from_name(image, ns, name);
-            if (klass != IntPtr.Zero) { cache = klass; return klass; }
+            yield return new UnityEngine.WaitForEndOfFrame();
+            if (wocm?.worldObjects != null && wocm.worldObjects.Count > countBefore)
+                break;
         }
-        return IntPtr.Zero;
+        if (wocm?.worldObjects == null || wocm.worldObjects.Count <= countBefore)
+            yield break;
+
+        // Find the newest object (highest ID)
+        int newestId = -1;
+        var enumerator = wocm.worldObjects.GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            var kv = enumerator.Current;
+            int id = kv.Key;
+            if (id > newestId)
+                newestId = id;
+        }
+        if (newestId < 0) yield break;
+
+        var wo = wocm.GetWorldObject(newestId);
+        if (wo == null) yield break;
+
+        wo.Scale = scale;
     }
 
-    private static unsafe Il2CppSystem.Object BoxInt(int value)
-    {
-        IntPtr klass = FindKlass(ref _int32Klass, "System", "Int32");
-        if (klass == IntPtr.Zero) return null;
-        return new Il2CppSystem.Object(IL2CPP.il2cpp_value_box(klass, (IntPtr)(&value)));
-    }
-
-    private static unsafe Il2CppSystem.Object BoxFloat(float value)
-    {
-        IntPtr klass = FindKlass(ref _singleKlass, "System", "Single");
-        if (klass == IntPtr.Zero) return null;
-        return new Il2CppSystem.Object(IL2CPP.il2cpp_value_box(klass, (IntPtr)(&value)));
-    }
 }
