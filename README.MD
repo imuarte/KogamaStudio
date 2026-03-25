@@ -1,4 +1,6 @@
-# KogamaStudio
+<h1>
+    <img src="images/logo.svg" alt="KogamaStudio" width="400" /> 
+</h1>
 
 A mod for KoGaMa that adds useful features to build mode.
   
