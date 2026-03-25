@@ -8,54 +8,10 @@ A mod for KoGaMa that adds useful features to build mode.
 
 ## Installation
 
-### Automatic (Recommended)
+### Automatic
 1. Download `KogamaStudio-Installer.exe`
 2. Run installer and select server
 3. Done!
-
-### Manual Installation
-
-#### Step 1: Install MelonLoader
-1. Download latest **Nightly** build from https://melonwiki.xyz/
-2. Run installer on your KoGaMa game
-
-#### Step 2: Copy DLL files to Mods folder
-
-Copy these 3 files to your Mods folder:
-- `KogamaStudio.dll`
-- `KogamaStudio-ImGui-Hook.dll`
-- `KogamaModFramework.dll`
-
-**For KogamaLauncher-WWW:**
-```
-%localappdata%\KogamaLauncher-WWW\Launcher\Standalone\Mods\
-```
-
-**For KogamaLauncher-BR:**
-```
-%localappdata%\KogamaLauncher-BR\Launcher\Standalone\Mods\
-```
-
-**For KogamaLauncher-Friends:**
-```
-%localappdata%\KogamaLauncher-Friends\Launcher\Standalone\Mods\
-```
-
-#### Step 3: Copy KogamaStudio folder
-
-Copy the `KogamaStudio` folder to:
-```
-%localappdata%\KogamaStudio\
-```
-
-This folder contains ResourcePacks folder.
-
-#### Step 4: Done!
-Launch the game and press **F2** to open the menu.
-
-## Requirements
-
-- [MelonLoader](https://melonwiki.xyz/) - **Nightly build** (latest version required)
 
 ## Usage
 
