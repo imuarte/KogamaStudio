@@ -116,12 +116,11 @@ FunctionEnd
 
 Section "Main"
   ${If} $installMode == "uninstall"
-    RMDir /r "$selectedServer\MelonLoader"
-    RMDir /r "$selectedServer\Mods"
-    RMDir /r "$selectedServer\Plugins"
-    RMDir /r "$selectedServer\UserData"
-    RMDir /r "$selectedServer\UserLibs"
-    Delete "$selectedServer\version.dll"
+    RMDir /r "$selectedServer\BepInEx"
+    RMDir /r "$selectedServer\dotnet"
+    Delete "$selectedServer\winhttp.dll"
+    Delete "$selectedServer\doorstop_config.ini"
+    Delete "$selectedServer\.doorstop_version"
     
     MessageBox MB_YESNO "$(RemoveUserData)" IDYES removeData IDNO keepData
     
@@ -155,12 +154,11 @@ SectionEnd
 Section "Uninstall"
   ReadRegStr $0 HKCU "Software\KogamaStudio" "LauncherPath"
   ${If} $0 != ""
-    RMDir /r "$0\MelonLoader"
-    RMDir /r "$0\Mods"
-    RMDir /r "$0\Plugins"
-    RMDir /r "$0\UserData"
-    RMDir /r "$0\UserLibs"
-    Delete "$0\version.dll"
+    RMDir /r "$0\BepInEx"
+    RMDir /r "$0\dotnet"
+    Delete "$0\winhttp.dll"
+    Delete "$0\doorstop_config.ini"
+    Delete "$0\.doorstop_version"
   ${EndIf}
   
   MessageBox MB_YESNO "$(RemoveUserData)" IDYES removeData IDNO keepData

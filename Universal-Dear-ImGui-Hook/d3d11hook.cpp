@@ -4,6 +4,7 @@
 #include "pipe.h"
 #include "Appearance.h"
 #include "IconsFontAwesome6.h"
+#include "Blueprints.h"
 
 namespace hooks_dx11 {
 
@@ -241,7 +242,6 @@ namespace hooks_dx11 {
                 gContext->ClearRenderTargetView(gRTV, clearColor);
             }
 
-            inputhook::remapCursor = false;
             ImGui_ImplDX11_NewFrame();
             ImGui_ImplWin32_NewFrame();
             ImGui::NewFrame();
@@ -251,7 +251,8 @@ namespace hooks_dx11 {
 
             menu::Init();
 
-            menu::blockMouseInput = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !menu::viewportHovered;
+            menu::blockMouseInput = (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !menu::viewportHovered)
+                                  || Blueprints::g_wantBlockViewport;
             io.WantCaptureMouse   = menu::blockMouseInput;
 
 
@@ -272,7 +273,6 @@ namespace hooks_dx11 {
             {
                 DebugLog("[d3d11hook] Render skipped: device context invalid\n");
             }
-            inputhook::remapCursor = true;
         }
     }
 

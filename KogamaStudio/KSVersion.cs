@@ -1,1 +1,1 @@
-namespace KogamaStudio { public static class KSVersion { public const string Value = "0.5.0-beta.5"; } }
+namespace KogamaStudio { public static class KSVersion { public const string Value = "0.5.0"; } }

@@ -44,15 +44,15 @@ internal class RecoveryMode
     }
 
     internal static bool CorruptionDetected = false;
-    private static readonly List<(string desc, string objectId, string actionType)> _pendingProblems = new();
+    private static readonly List<(string desc, string objectId)> _pendingProblems = new();
     private static bool _initialized = false;
 
-    private static void NotifyCorruption(string description, string objectId = "", string actionType = "")
+    private static void NotifyCorruption(string description, string objectId = "")
     {
         bool firstDetection = false;
         lock (_pendingProblems)
         {
-            _pendingProblems.Add((description, objectId, actionType));
+            _pendingProblems.Add((description, objectId));
             if (!CorruptionDetected)
             {
                 CorruptionDetected = true;
@@ -66,20 +66,20 @@ internal class RecoveryMode
             {
                 Thread.Sleep(3000); // wait for pipe server to be ready
                 EnableRecoveryMode();
-                List<(string desc, string objectId, string actionType)> toSend;
+                List<(string desc, string objectId)> toSend;
                 lock (_pendingProblems)
                 {
-                    toSend = new List<(string, string, string)>(_pendingProblems);
+                    toSend = new List<(string, string)>(_pendingProblems);
                 }
-                foreach (var (desc, objId, action) in toSend)
-                    PipeClient.SendCommand($"recovery_problem|{objId}|{action}|{desc}");
+                foreach (var (desc, objId) in toSend)
+                    PipeClient.SendCommand($"recovery_problem|{objId}|{desc}");
                 PipeClient.SendCommand("recovery_corruption_detected");
                 _initialized = true;
             });
         }
         else if (_initialized)
         {
-            PipeClient.SendCommand($"recovery_problem|{objectId}|{actionType}|{description}");
+            PipeClient.SendCommand($"recovery_problem|{objectId}|{description}");
         }
     }
 
@@ -131,10 +131,9 @@ internal class RecoveryMode
             string description = hasId
                 ? $"Object {_currentInitializingChildId} failed to initialize - {firstLine}."
                 : $"An object failed to initialize - {firstLine}.";
-            string action = hasId ? "remove" : "";
 
             KogamaStudio.Log.LogWarning($"[RecoveryMode] Object {_currentInitializingChildId} initialization failed: {firstLine}.");
-            NotifyCorruption(description, _currentInitializingChildId.ToString(), action);
+            NotifyCorruption(description, hasId ? _currentInitializingChildId.ToString() : "");
             return null;
         }
         return __exception;
@@ -161,6 +160,132 @@ internal class RecoveryMode
         return __exception;
     }
 
+    // ── Top-level world loading protection ──
 
+    [HarmonyPatch(typeof(WorldNetwork), "CreateGameWorldFromQueryData")]
+    [HarmonyFinalizer]
+    private static Exception CreateGameWorldFromQueryData_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogError($"[RecoveryMode] CreateGameWorldFromQueryData failed: {msg}");
+        NotifyCorruption($"World loading failed - {msg}");
+        return null;
+    }
 
+    [HarmonyPatch(typeof(WorldNetwork), "AddGameQueryDataToGameWorld")]
+    [HarmonyFinalizer]
+    private static Exception AddGameQueryDataToGameWorld_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogError($"[RecoveryMode] AddGameQueryDataToGameWorld failed: {msg}");
+        NotifyCorruption($"Additional world data failed to load - {msg}");
+        return null;
+    }
+
+    [HarmonyPatch(typeof(WorldNetwork), "InitializeQueryData")]
+    [HarmonyFinalizer]
+    private static Exception InitializeQueryData_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogError($"[RecoveryMode] InitializeQueryData failed: {msg}");
+        NotifyCorruption($"Query data deserialization failed - {msg}");
+        return null;
+    }
+
+    [HarmonyPatch(typeof(WorldNetwork), "OnGameDataDeserialized")]
+    [HarmonyFinalizer]
+    private static Exception OnGameDataDeserialized_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogError($"[RecoveryMode] OnGameDataDeserialized failed: {msg}");
+        NotifyCorruption($"Game data deserialization failed - {msg}");
+        return null;
+    }
+
+    [HarmonyPatch(typeof(WorldNetwork), "HandleDeserializedWorldData")]
+    [HarmonyFinalizer]
+    private static Exception HandleDeserializedWorldData_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogError($"[RecoveryMode] HandleDeserializedWorldData failed: {msg}");
+        NotifyCorruption($"World data handling failed - {msg}");
+        return null;
+    }
+
+    // ── Individual data type protection ──
+
+    [HarmonyPatch(typeof(WorldNetwork), "AddPrototype")]
+    [HarmonyFinalizer]
+    private static Exception AddPrototype_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogWarning($"[RecoveryMode] AddPrototype failed: {msg}");
+        NotifyCorruption($"Prototype skipped - {msg}");
+        return null;
+    }
+
+    [HarmonyPatch(typeof(WorldNetwork), "AddWorldObject")]
+    [HarmonyFinalizer]
+    private static Exception AddWorldObject_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogWarning($"[RecoveryMode] AddWorldObject failed: {msg}");
+        NotifyCorruption($"World object skipped - {msg}");
+        return null;
+    }
+
+    [HarmonyPatch(typeof(WorldNetwork), "AddLink",
+        new[] { typeof(Il2CppSystem.Collections.Generic.Dictionary<Il2CppSystem.Object, Il2CppSystem.Object>) })]
+    [HarmonyFinalizer]
+    private static Exception AddLink_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogWarning($"[RecoveryMode] AddLink failed: {msg}");
+        NotifyCorruption($"Link skipped - {msg}");
+        return null;
+    }
+
+    [HarmonyPatch(typeof(WorldNetwork), "AddObjectLink",
+        new[] { typeof(Il2CppSystem.Collections.Generic.Dictionary<Il2CppSystem.Object, Il2CppSystem.Object>) })]
+    [HarmonyFinalizer]
+    private static Exception AddObjectLink_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogWarning($"[RecoveryMode] AddObjectLink failed: {msg}");
+        NotifyCorruption($"Object link skipped - {msg}");
+        return null;
+    }
+
+    // ── Photon event protection ──
+
+    [HarmonyPatch(typeof(MVNetworkGame), "OnEvent")]
+    [HarmonyFinalizer]
+    private static Exception OnEvent_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogError($"[RecoveryMode] Photon OnEvent failed: {msg}");
+        NotifyCorruption($"Network event processing failed - {msg}");
+        return null;
+    }
+
+    [HarmonyPatch(typeof(MVNetworkGame), "OnOperationResponse")]
+    [HarmonyFinalizer]
+    private static Exception OnOperationResponse_Finalizer(Exception __exception)
+    {
+        if (__exception == null) return null;
+        string msg = __exception.Message.Split('\n')[0].Trim();
+        KogamaStudio.Log.LogError($"[RecoveryMode] Photon OnOperationResponse failed: {msg}");
+        NotifyCorruption($"Network response processing failed - {msg}");
+        return null;
+    }
 }

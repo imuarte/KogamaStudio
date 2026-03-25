@@ -71,6 +71,7 @@ namespace Clipboard {
             if (ImGui::Button(TR(u8"Save .kscubes"))) { std::string p = SaveDialog(); if (!p.empty()) SendCommand((std::string(u8"clipboard_save_to_file|") + p).c_str()); }
             ImGui::SameLine();
             if (ImGui::Button(TR(u8"Load .kscubes"))) { std::string p = OpenDialog(); if (!p.empty()) SendCommand((std::string(u8"clipboard_load_from_file|") + p).c_str()); }
+
             ImGui::Separator();
 
             if (ImGui::CollapsingHeader(TR(u8"Transform"))) {

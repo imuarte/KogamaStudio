@@ -89,6 +89,12 @@ namespace menu {
         FindClose(h);
     }
 
+    std::string FloatToStr(float value) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%g", value);
+        return buf;
+    }
+
     void FloatInput(const char* label, float& value, const char* commandPrefix, bool& typing, float width, const char* format) {
         ImGui::PushItemWidth(width);
         ImGui::InputFloat(label, &value, 0.0f, 0.0f, format);
@@ -97,7 +103,7 @@ namespace menu {
         if (!typing) typing = ImGui::IsItemActive();
 
         if (ImGui::IsItemDeactivatedAfterEdit()) {
-            SendCommand((std::string(commandPrefix) + "|" + std::to_string(value)).c_str());
+            SendCommand((std::string(commandPrefix) + "|" + FloatToStr(value)).c_str());
         }
     }
 
@@ -109,7 +115,7 @@ namespace menu {
         if (!typing) typing = ImGui::IsItemActive();
 
         if (ImGui::IsItemEdited()) {
-            SendCommand((std::string(commandPrefix) + "|" + std::to_string(value)).c_str());
+            SendCommand((std::string(commandPrefix) + "|" + FloatToStr(value)).c_str());
         }
     }
 

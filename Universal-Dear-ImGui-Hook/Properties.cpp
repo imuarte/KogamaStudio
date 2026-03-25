@@ -4,6 +4,7 @@
 #include "Inventory.h"
 #include "History.h"
 #include "Explorer.h"
+#include "Appearance.h"
 
 using namespace menu;
 
@@ -18,9 +19,11 @@ namespace Properties {
     float rotationZ = 0.0f;
     bool isModel = false;
     bool isPrevievPaste = false;
+    bool clearBeforePaste = false;
     int itemId = -1;
     int groupId = -1;
     int prototypeId = -1;
+    std::string objectType = "";
 
     static std::string sPrevObjectId = "";
     static std::string sPrevItemId = "";
@@ -105,12 +108,19 @@ namespace Properties {
                             ImGui::TableSetColumnIndex(1); ImGui::TextUnformatted(val.c_str());
                         };
                         Row(TR(u8"Object ID"),   targetObjectId);
+                        Row(TR(u8"Type"),     objectType.empty() ? u8"-" : objectType);
                         Row(TR(u8"Item ID"),  itemId  >= 0 ? std::to_string(itemId)  : u8"-");
                         Row(TR(u8"Group ID"), groupId >= 0 ? std::to_string(groupId) : u8"-");
                         ImGui::EndTable();
                     }
 
+                    bool protectedType = !Appearance::allowDangerousDelete &&
+                        (objectType == "CubeModelPrototypeTerrain" ||
+                         objectType == "GameOptionsDataObject" ||
+                         objectType == "GamePassProgressionDataObject");
+                    if (protectedType) ImGui::BeginDisabled();
                     if (ImGui::Button(TR(u8"Remove"))) SendCommand(u8"properties_remove");
+                    if (protectedType) ImGui::EndDisabled();
                     ImGui::SameLine();
                     if (ImGui::Button(TR(u8"Teleport to"))) SendCommand((u8"recovery_teleport_to_object|" + targetObjectId).c_str());
                     ImGui::SameLine();
@@ -192,6 +202,9 @@ namespace Properties {
                         if (ImGui::Button(TR(u8"Paste Cubes")))
                             SendCommand(u8"clipboard_paste_model");
                         if (building) ImGui::EndDisabled();
+
+                        if (ImGui::Checkbox(TR(u8"Clear Model Before Paste"), &clearBeforePaste))
+                            SendCommand(clearBeforePaste ? u8"clipboard_clear_before_paste|true" : u8"clipboard_clear_before_paste|false");
 
                         if (ImGui::Checkbox(TR(u8"Preview Paste Cubes"), &isPrevievPaste))
                         {

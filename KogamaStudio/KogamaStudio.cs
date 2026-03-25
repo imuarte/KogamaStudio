@@ -173,7 +173,7 @@ namespace KogamaStudio
                             Vector3? pos = null;
                             if (t != null)
                                 pos = t.position - t.rotation * (t.localScale * 0.5f);
-                            GlLineDrawer.Cubes(cubes, Color.yellow,
+                            GlLineDrawer.Cubes(cubes,
                                 position: pos,
                                 scale: t?.localScale,
                                 rotation: t?.rotation);
@@ -223,29 +223,12 @@ namespace KogamaStudio
 
         void LateUpdate()
         {
-            Freecam.Update();
+            Freecam.ProcessInput();
 
             var mgr = MVGameControllerBase.MainCameraManager;
             if (mgr == null) return;
 
-            if (Freecam.IsEnabled)
-            {
-                if (mgr.MainCamera != null)
-                {
-                    mgr.MainCamera.transform.position = Freecam.Position;
-                    mgr.MainCamera.transform.rotation = Freecam.Rotation;
-                }
-                if (mgr.SecondaryCamera != null)
-                {
-                    mgr.SecondaryCamera.transform.position = Freecam.Position;
-                    mgr.SecondaryCamera.transform.rotation = Freecam.Rotation;
-                }
-                if (mgr.TertiaryCamera != null)
-                {
-                    mgr.TertiaryCamera.transform.position = Freecam.Position;
-                    mgr.TertiaryCamera.transform.rotation = Freecam.Rotation;
-                }
-            }
+            Freecam.Apply(mgr);
 
             float baseFov = FovModifier.Enabled ? FovModifier.Fov : 60f;
             if (ZoomModifier.Enabled)

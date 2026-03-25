@@ -23,6 +23,8 @@
 #include "History.h"
 #include "Worlds.h"
 #include "Welcome.h"
+#include "Blueprints.h"
+#include "Performance.h"
 
 namespace menu {
     bool isOpen = false;
@@ -37,7 +39,7 @@ namespace menu {
     static HMODULE hModule = nullptr;
 
     namespace Windows {
-        static bool appearanceOpen = false;
+        static bool settingsOpen = false;
         static bool consoleOpen = false;
     }
 
@@ -87,7 +89,9 @@ namespace menu {
             GetWindowRect(GetForegroundWindow(), &rect);
             int centerX = (rect.left + rect.right) / 2;
             int centerY = (rect.top + rect.bottom) / 2;
+            inputhook::allowSetCursorPos = true;
             SetCursorPos(centerX, centerY);
+            inputhook::allowSetCursorPos = false;
         }
 
         if (!pipe::openMenu) {
@@ -156,6 +160,8 @@ namespace menu {
             ImGui::DockBuilderDockWindow(u8"###About",         dockRightBottom);
             ImGui::DockBuilderDockWindow(u8"###Console",       dockRightBottom);
             ImGui::DockBuilderDockWindow(u8"###Worlds",        dockRightBottom);
+            ImGui::DockBuilderDockWindow(u8"###Blueprints",    dockLeft);
+            ImGui::DockBuilderDockWindow(u8"###Performance",   dockRightBottom);
             ImGui::DockBuilderFinish(dockId);
             dockLayoutDone:;
         }
@@ -207,6 +213,32 @@ namespace menu {
         ImGui::End();
         ImGui::PopStyleVar();
 
+        // --- Main panels (all manage their own Begin/End) ---
+        bool playLocked = (GameInfo::gameMode == "Play" && !Appearance::IsExtendedActive());
+
+        if (!playLocked) {
+            Explorer::Render();
+            Tools::Render();
+            Properties::Render();
+            Clipboard::Render();
+            History::Render();
+            Inventory::Render();
+            Players::Render();
+            Worlds::Render();
+            Blueprints::Render();
+        }
+
+        GameInfo::Render();
+        CameraPanel::Render();
+        ResourcePacks::Render();
+        Translate::Render();
+        About::Render();
+        Performance::Render();
+
+        // Block viewport input when Blueprints panel is hovered/focused
+        if (Blueprints::g_wantBlockViewport)
+            viewportHovered = false;
+
         static bool prevViewportHovered = false;
         if (viewportHovered != prevViewportHovered)
         {
@@ -214,36 +246,31 @@ namespace menu {
             SendCommand(viewportHovered ? u8"viewport_cursor|false" : u8"viewport_cursor|true");
         }
 
-        // --- Main panels (all manage their own Begin/End) ---
-        Explorer::Render();
-        Tools::Render();
-
-        Properties::Render();
-        Clipboard::Render();
-        History::Render();
-
-        GameInfo::Render();
-        Inventory::Render();
-        Players::Render();
-        CameraPanel::Render();
-        ResourcePacks::Render();
-        Translate::Render();
-        About::Render();
-        Worlds::Render();
-
         if (ImGui::BeginMainMenuBar())
         {
             menuBarHeight = ImGui::GetWindowSize().y;
-            if (ImGui::BeginMenu(TR(u8"Windows")))
-            {
-                ImGui::MenuItem(TR(u8"Appearance"), nullptr, &Windows::appearanceOpen);
-                ImGui::MenuItem(TR(u8"Console"), nullptr, &Windows::consoleOpen);
-                ImGui::EndMenu();
-            }
+            if (ImGui::MenuItem(TR(u8"Settings")))
+                Windows::settingsOpen = !Windows::settingsOpen;
+            if (ImGui::MenuItem(TR(u8"Console")))
+                Windows::consoleOpen = !Windows::consoleOpen;
             ImGui::EndMainMenuBar();
         }
 
-        if (Windows::appearanceOpen) Appearance::Render();
+        if (Windows::settingsOpen) {
+            ImGui::OpenPopup(u8"##SettingsModal");
+            Windows::settingsOpen = false;
+        }
+        ImGui::SetNextWindowSize(ImVec2(600, 450), ImGuiCond_Appearing);
+        if (ImGui::BeginPopupModal(u8"##SettingsModal", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize)) {
+            // Header
+            ImGui::Text(TR(u8"Settings"));
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
+            if (ImGui::SmallButton(u8"X"))
+                ImGui::CloseCurrentPopup();
+            ImGui::Separator();
+            Appearance::Render(true);
+            ImGui::EndPopup();
+        }
         if (Windows::consoleOpen) AppLog::Render();
 
         Recovery::Render();

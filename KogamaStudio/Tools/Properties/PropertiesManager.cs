@@ -34,6 +34,6 @@ internal class PropertiesManager
             $"|{WOId}|{(int)wo.ItemId}|{wo.GroupId}" +
             $"|{wo.Position.x.ToString(inv)}|{wo.Position.y.ToString(inv)}|{wo.Position.z.ToString(inv)}" +
             $"|{euler.x.ToString(inv)}|{euler.y.ToString(inv)}|{euler.z.ToString(inv)}" +
-            $"|{(isModel ? "1" : "0")}|{protoId}");
+            $"|{(isModel ? "1" : "0")}|{protoId}|{wo.type}");
     }
 }

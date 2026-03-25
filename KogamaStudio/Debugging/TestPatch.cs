@@ -1,26 +1,31 @@
 using HarmonyLib;
-using ExitGames.Client.Photon;
 
 namespace KogamaStudio;
 
-[HarmonyPatch(typeof(PhotonPeer), "SendOperation")]
-public class PhotonJoinCapture
+[HarmonyPatch]
+internal static class SpawnRoleDebug
 {
-    static void Prefix(PhotonPeer __instance, object[] __args)
+    [HarmonyPatch(typeof(MVNetworkGame.OperationRequests), nameof(MVNetworkGame.OperationRequests.SetSpawnRoleBody))]
+    [HarmonyPrefix]
+    private static void SetSpawnRoleBody_Prefix(int avatarCreatorWoId, int avatarBodyDbId)
     {
-        if (__args == null || __args.Length < 1) return;
-        byte opCode = (byte)__args[0];
-        if (opCode != 255) return;
+        KogamaStudio.Log.LogInfo($"[SpawnRole] SetSpawnRoleBody -> creatorWoId: {avatarCreatorWoId}, bodyDbId: {avatarBodyDbId}");
+    }
 
-        var secret = typeof(PhotonPeer)
-            .GetField("PayloadEncryptionSecret",
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Instance)
-            ?.GetValue(__instance) as byte[];
-
-        if (secret != null)
-            KogamaStudio.Log.LogInfo($"[KogamaScripts] Secret: {System.Text.Encoding.UTF8.GetString(secret)}");
-        else
-            KogamaStudio.Log.LogInfo($"[KogamaScripts] Secret: null");
+    [HarmonyPatch(typeof(MVAvatarSpawnRoleCreator), nameof(MVAvatarSpawnRoleCreator.UpdateAvatarBody))]
+    [HarmonyPrefix]
+    private static void UpdateAvatarBody_Prefix(object[] __args)
+    {
+        try
+        {
+            if (__args == null || __args.Length < 1) return;
+            var data = __args[0] as dynamic;
+            if (data == null) return;
+            KogamaStudio.Log.LogInfo($"[SpawnRole] UpdateAvatarBody <- deletedBody: {data.deletedBodyWoId}, addedBody: {data.addedBodyWoId}, deletedProto: {data.deletedProtoBodyWoId}, addedProto: {data.addedProtoBodyWoId}, creatorWoId: {data.spawnRoleCreatorWoId}");
+        }
+        catch (System.Exception ex)
+        {
+            KogamaStudio.Log.LogWarning($"[SpawnRole] UpdateAvatarBody log failed: {ex.Message}");
+        }
     }
 }

@@ -21,11 +21,21 @@ namespace History {
         float oldQx = 0, oldQy = 0, oldQz = 0, oldQw = 1;
         float newQx = 0, newQy = 0, newQz = 0, newQw = 1;
         bool hasRotation = false;
+        // link (regular)
+        int linkId = -1, outputWOID = -1, inputWOID = -1;
+        bool hasLinkAdded = false, hasLinkRemoved = false;
+        // object link
+        int objLinkId = -1, connectorWOID = -1, objWOID = -1;
+        bool hasObjLinkAdded = false, hasObjLinkRemoved = false;
         // undo state
         bool undone = false;
-        int undoOrder = 0; // when undone: set to ++undoCounter; higher = more recently undone
+        int undoOrder = 0;
 
-        bool isUndoable() const { return hasPosition || hasRotation; }
+        bool isUndoable() const {
+            return hasPosition || hasRotation
+                || hasLinkAdded || hasLinkRemoved
+                || hasObjLinkAdded || hasObjLinkRemoved;
+        }
     };
 
     static std::vector<Entry> entries;
@@ -83,15 +93,75 @@ namespace History {
             entries.resize(MAX_ENTRIES);
     }
 
+    void AddLinkAdded(int outputWOID, int inputWOID)
+    {
+        char display[64];
+        snprintf(display, sizeof(display), "Link added (%d -> %d)", outputWOID, inputWOID);
+        Entry e;
+        e.display = display;
+        e.outputWOID = outputWOID; e.inputWOID = inputWOID;
+        e.hasLinkAdded = true;
+        std::lock_guard<std::mutex> lock(mtx);
+        entries.insert(entries.begin(), e);
+        if ((int)entries.size() > MAX_ENTRIES) entries.resize(MAX_ENTRIES);
+    }
+
+    void AddLinkRemoved(int outputWOID, int inputWOID)
+    {
+        char display[64];
+        snprintf(display, sizeof(display), "Link removed (%d -> %d)", outputWOID, inputWOID);
+        Entry e;
+        e.display = display;
+        e.outputWOID = outputWOID; e.inputWOID = inputWOID;
+        e.hasLinkRemoved = true;
+        std::lock_guard<std::mutex> lock(mtx);
+        entries.insert(entries.begin(), e);
+        if ((int)entries.size() > MAX_ENTRIES) entries.resize(MAX_ENTRIES);
+    }
+
+    void AddObjectLinkAdded(int connectorWOID, int objectWOID)
+    {
+        char display[64];
+        snprintf(display, sizeof(display), "Object link added (%d -> %d)", connectorWOID, objectWOID);
+        Entry e;
+        e.display = display;
+        e.connectorWOID = connectorWOID; e.objWOID = objectWOID;
+        e.hasObjLinkAdded = true;
+        std::lock_guard<std::mutex> lock(mtx);
+        entries.insert(entries.begin(), e);
+        if ((int)entries.size() > MAX_ENTRIES) entries.resize(MAX_ENTRIES);
+    }
+
+    void AddObjectLinkRemoved(int connectorWOID, int objectWOID)
+    {
+        char display[64];
+        snprintf(display, sizeof(display), "Object link removed (%d -> %d)", connectorWOID, objectWOID);
+        Entry e;
+        e.display = display;
+        e.connectorWOID = connectorWOID; e.objWOID = objectWOID;
+        e.hasObjLinkRemoved = true;
+        std::lock_guard<std::mutex> lock(mtx);
+        entries.insert(entries.begin(), e);
+        if ((int)entries.size() > MAX_ENTRIES) entries.resize(MAX_ENTRIES);
+    }
+
     static void SendUndo(Entry& e)
     {
         char cmd[256];
         if (e.hasPosition)
             snprintf(cmd, sizeof(cmd), "history_restore_position|%s|%.3f|%.3f|%.3f",
                 e.objectId.c_str(), e.oldX, e.oldY, e.oldZ);
-        else
+        else if (e.hasRotation)
             snprintf(cmd, sizeof(cmd), "history_restore_rotation|%s|%.5f|%.5f|%.5f|%.5f",
                 e.objectId.c_str(), e.oldQx, e.oldQy, e.oldQz, e.oldQw);
+        else if (e.hasLinkAdded)
+            snprintf(cmd, sizeof(cmd), "history_restore_remove_link|%d|%d", e.outputWOID, e.inputWOID);
+        else if (e.hasLinkRemoved)
+            snprintf(cmd, sizeof(cmd), "history_restore_add_link|%d|%d", e.outputWOID, e.inputWOID);
+        else if (e.hasObjLinkAdded)
+            snprintf(cmd, sizeof(cmd), "history_restore_remove_object_link|%d|%d", e.connectorWOID, e.objWOID);
+        else if (e.hasObjLinkRemoved)
+            snprintf(cmd, sizeof(cmd), "history_restore_add_object_link|%d|%d", e.connectorWOID, e.objWOID);
         menu::SendCommand(cmd);
     }
 
@@ -101,9 +171,17 @@ namespace History {
         if (e.hasPosition)
             snprintf(cmd, sizeof(cmd), "history_restore_position|%s|%.3f|%.3f|%.3f",
                 e.objectId.c_str(), e.newX, e.newY, e.newZ);
-        else
+        else if (e.hasRotation)
             snprintf(cmd, sizeof(cmd), "history_restore_rotation|%s|%.5f|%.5f|%.5f|%.5f",
                 e.objectId.c_str(), e.newQx, e.newQy, e.newQz, e.newQw);
+        else if (e.hasLinkAdded)
+            snprintf(cmd, sizeof(cmd), "history_restore_add_link|%d|%d", e.outputWOID, e.inputWOID);
+        else if (e.hasLinkRemoved)
+            snprintf(cmd, sizeof(cmd), "history_restore_remove_link|%d|%d", e.outputWOID, e.inputWOID);
+        else if (e.hasObjLinkAdded)
+            snprintf(cmd, sizeof(cmd), "history_restore_add_object_link|%d|%d", e.connectorWOID, e.objWOID);
+        else if (e.hasObjLinkRemoved)
+            snprintf(cmd, sizeof(cmd), "history_restore_remove_object_link|%d|%d", e.connectorWOID, e.objWOID);
         menu::SendCommand(cmd);
     }
 

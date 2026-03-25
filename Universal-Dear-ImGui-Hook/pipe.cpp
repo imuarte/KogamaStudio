@@ -13,6 +13,7 @@
 #include "Inventory.h"
 #include "History.h"
 #include "Camera.h"
+#include "Appearance.h"
 
 
 namespace pipe {
@@ -63,6 +64,15 @@ namespace pipe {
         {
             menu::isOpen = true;
             gameInitialized = true;
+
+            // Send preview settings to C#
+            char cmd[256];
+            snprintf(cmd, sizeof(cmd),
+                "preview_settings|%.3f|%.3f|%.3f|%.3f|%d|%.3f",
+                Appearance::previewColor[0], Appearance::previewColor[1],
+                Appearance::previewColor[2], Appearance::previewColor[3],
+                Appearance::previewMode, Appearance::previewOpacity);
+            menu::SendCommand(cmd);
         }
         else if (command == "key_down")
         {
@@ -78,7 +88,7 @@ namespace pipe {
         }
         else if (command == "properties_update")
         {
-            // format: id|itemId|groupId|posX|posY|posZ|rotX|rotY|rotZ|isModel|protoId
+            // format: id|itemId|groupId|posX|posY|posZ|rotX|rotY|rotZ|isModel|protoId|type
             auto tok = [](const std::string& s, int idx) -> std::string {
                 size_t start = 0;
                 for (int i = 0; i < idx; ++i) {
@@ -100,6 +110,7 @@ namespace pipe {
             Properties::rotationZ      = std::stof(tok(param, 8));
             Properties::isModel        = tok(param, 9) == "1";
             Properties::prototypeId    = std::stoi(tok(param, 10));
+            Properties::objectType     = tok(param, 11);
             Inventory::ClearSelection();
         }
         else if (command == "clipboard_count")
@@ -150,11 +161,8 @@ namespace pipe {
         {
             size_t p1 = param.find("|");
             std::string objectId = param.substr(0, p1);
-            std::string rest = (p1 != std::string::npos) ? param.substr(p1 + 1) : "";
-            size_t p2 = rest.find("|");
-            std::string actionType = rest.substr(0, p2);
-            std::string description = (p2 != std::string::npos) ? rest.substr(p2 + 1) : rest;
-            Recovery::AddProblem(objectId, actionType, description);
+            std::string description = (p1 != std::string::npos) ? param.substr(p1 + 1) : "";
+            Recovery::AddProblem(objectId, description);
         }
         else if (command == "console_log")
         {
@@ -252,6 +260,26 @@ namespace pipe {
             float newQz = rest.empty() ? 0.f : std::stof(nextF(rest));
             float newQw = rest.empty() ? 1.f : std::stof(rest);
             History::AddRotation(id, oldQx, oldQy, oldQz, oldQw, newQx, newQy, newQz, newQw);
+        }
+        else if (command == "history_link_added" || command == "history_link_removed"
+              || command == "history_object_link_added" || command == "history_object_link_removed")
+        {
+            auto nextI = [](std::string& s) -> int {
+                size_t p = s.find('|');
+                std::string v = (p == std::string::npos) ? s : s.substr(0, p);
+                s = (p == std::string::npos) ? "" : s.substr(p + 1);
+                return v.empty() ? -1 : std::stoi(v);
+            };
+            std::string rest = param;
+            int a = nextI(rest), b = nextI(rest);
+            if (command == "history_link_added")
+                History::AddLinkAdded(a, b);
+            else if (command == "history_link_removed")
+                History::AddLinkRemoved(a, b);
+            else if (command == "history_object_link_added")
+                History::AddObjectLinkAdded(a, b);
+            else if (command == "history_object_link_removed")
+                History::AddObjectLinkRemoved(a, b);
         }
         else if (command == "inventory_clear")
         {

@@ -15,6 +15,7 @@ internal class ObjectEntry
     [JsonProperty("type")]    public string type    = "";
     [JsonProperty("itemId")]  public int    itemId  = -1;
     [JsonProperty("groupId")] public int    groupId = -1;
+    [JsonProperty("isGroup")] public bool   isGroup = false;
     [JsonProperty("x")]       public float  x;
     [JsonProperty("y")]       public float  y;
     [JsonProperty("z")]       public float  z;
@@ -22,6 +23,8 @@ internal class ObjectEntry
 
 internal static class ExplorerManager
 {
+    internal static bool AdvancedGrouping = false;
+
     private static bool _loadComplete = false;
 
     private static string FilePath(int planetID) =>
@@ -42,7 +45,7 @@ internal static class ExplorerManager
         try
         {
             File.WriteAllText(FilePath(planetID), JsonConvert.SerializeObject(list));
-            PipeClient.SendCommand($"explorer_ready|{FilePath(planetID)}|{RootGroupId}");
+            PipeClient.SendCommand($"explorer_ready|{FilePath(planetID)}|{RootGroupId}|{(AdvancedGrouping ? "1" : "0")}");
         }
         catch (Exception ex) { KogamaStudio.Log.LogError($"[Explorer] Write: {ex.Message}"); }
     }
@@ -104,7 +107,7 @@ internal static class ExplorerManager
         int planetID = GameInfo.PlanetID;
 
         if (File.Exists(FilePath(planetID)))
-            PipeClient.SendCommand($"explorer_ready|{FilePath(planetID)}|{RootGroupId}");
+            PipeClient.SendCommand($"explorer_ready|{FilePath(planetID)}|{RootGroupId}|{(AdvancedGrouping ? "1" : "0")}");
 
         while (MVGameControllerBase.WOCM?.worldObjects == null ||
                MVGameControllerBase.WOCM.worldObjects.Count == 0)
@@ -148,6 +151,7 @@ internal static class ExplorerManager
             var wo = wocm.GetWorldObjectClient(e.id);
             if (wo == null) continue;
             e.groupId = wo.GroupId;
+            e.isGroup = wo is MVGroup;
             var pos = wo.transform?.position ?? UnityEngine.Vector3.zero;
             e.x = pos.x; e.y = pos.y; e.z = pos.z;
         }
@@ -173,6 +177,7 @@ internal static class ExplorerManager
                 name    = count == 0 ? type : $"{type} {count}",
                 itemId  = (int)wo.ItemId,
                 groupId = wo.GroupId,
+                isGroup = wo is MVGroup,
                 x = pos.x, y = pos.y, z = pos.z
             });
         }

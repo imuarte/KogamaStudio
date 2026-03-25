@@ -45,6 +45,7 @@ internal class ClipboardManager
     internal static int ClipMinZ { get => _clipMinZ; set { _clipMinZ = value; InvalidateCache(); } }
     private static int _clipMaxZ = 0;
     internal static int ClipMaxZ { get => _clipMaxZ; set { _clipMaxZ = value; InvalidateCache(); } }
+    internal static bool ClearBeforePaste = false;
     internal static bool Preview;
     internal static int Version = 0;
 
@@ -222,8 +223,26 @@ internal class ClipboardManager
         if (!KogamaModFramework.Operations.CubeOperations.IsBuilding)
         {
             LastPasteTotalCubes = edited.Count;
-            KogamaStudioBehaviour.StartCo(KogamaModFramework.Operations.CubeOperations.Add(ModelProperties.CubeModelBase, edited));
+            if (ClearBeforePaste)
+                KogamaStudioBehaviour.StartCo(ClearThenAdd(ModelProperties.CubeModelBase, edited));
+            else
+                KogamaStudioBehaviour.StartCo(KogamaModFramework.Operations.CubeOperations.Add(ModelProperties.CubeModelBase, edited));
         }
+    }
+
+    private static System.Collections.IEnumerator ClearThenAdd(MVCubeModelBase model, List<CubeData> cubes)
+    {
+        var existing = KogamaModFramework.Operations.CubeOperations.GetAllCubes(model);
+        var positions = existing.Select(c => new MV.WorldObject.IntVector(c.X, c.Y, c.Z)).ToList();
+        if (positions.Count > 0)
+        {
+            var removeEnum = KogamaModFramework.Operations.CubeOperations.Remove(model, positions);
+            while (removeEnum.MoveNext())
+                yield return removeEnum.Current;
+        }
+        var addEnum = KogamaModFramework.Operations.CubeOperations.Add(model, cubes);
+        while (addEnum.MoveNext())
+            yield return addEnum.Current;
     }
 
     internal static List<CubeData> Offset(List<CubeData> cubes, int offsetX, int offsetY, int offsetZ)

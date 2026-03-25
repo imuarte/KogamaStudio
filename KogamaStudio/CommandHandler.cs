@@ -14,6 +14,7 @@ using KogamaStudio.Explorer;
 using KogamaStudio.Clipboard;
 using KogamaStudio.Generating.Models;
 using KogamaStudio.Inventory;
+using KogamaStudio.History;
 using KogamaStudio.Objects;
 using KogamaStudio.ResourcePacks.Materials;
 using KogamaStudio.Tools.Build;
@@ -221,7 +222,7 @@ new System.Collections.Generic.Queue<(int id, string text)>();
             MVGameControllerBase.Game.World.InitializedGameQueryData + _groupCreatedHandler;
     }
 
-    private static System.Collections.IEnumerator MoveToGroupCoroutine(int targetGroupId, int[] objectIds)
+    internal static System.Collections.IEnumerator MoveToGroupCoroutine(int targetGroupId, int[] objectIds)
     {
         var rootId = MVGameControllerBase.WOCM.RootGroup.Id;
         bool isRoot = targetGroupId == rootId;
@@ -330,24 +331,16 @@ new System.Collections.Generic.Queue<(int id, string text)>();
             switch (command)
             {
                 case "resourcepacks_load":
-
-                    string path = Path.Combine(PathHelper.GetPath(), "ResourcePacks", param, "materials");
-
-                    if (!Directory.Exists(path))
+                {
+                    string rpPath = Path.Combine(PathHelper.GetPath(), "ResourcePacks", param, "materials");
+                    if (!Directory.Exists(rpPath))
                     {
-                        KogamaStudio.Log.LogError($"Path not found {path}");
+                        KogamaStudio.Log.LogError($"[ResourcePacks] Path not found: {rpPath}");
                         break;
                     }
-
-                    var files = Enumerable.Range(0, 69)
-                        .Select(i => $"{path}/{i}.png")
-                        .ToList();
-
-                    MaterialsLoader.LoadTexture(files);
-
-                    KogamaStudio.Log.LogInfo("[CommandHandler] test");
-
+                    MaterialsLoader.LoadTexture(rpPath);
                     break;
+                }
 
                 case "resourcepacks_reset":
                     MVGameControllerBase.MaterialLoader.SetMainTexture(DefaultMaterials.defaultMaterials, true);
@@ -527,6 +520,10 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     ExplorerManager.Rename(renameId, param[(sep2 + 1)..]);
                     break;
                 }
+                case "explorer_set_advanced_grouping":
+                    ExplorerManager.AdvancedGrouping = param == "1" || param == "true";
+                    ExplorerManager.Refresh();
+                    break;
                 case "explorer_select":
                     targetWoId = int.Parse(param);
                     if (Objects.WOIdGetter.Instance != null)
@@ -544,10 +541,10 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     Freecam.Disable();
                     break;
                 case "camera_freecam_speed":
-                    Freecam.Speed = float.Parse(param);
+                    Freecam.Speed = float.Parse(param, System.Globalization.CultureInfo.InvariantCulture);
                     break;
                 case "camera_freecam_sensitivity":
-                    Freecam.Sensitivity = float.Parse(param);
+                    Freecam.Sensitivity = float.Parse(param, System.Globalization.CultureInfo.InvariantCulture);
                     break;
                 case "camera_freecam_require_rmb":
                     Freecam.RequireRightClick = param == "true";
@@ -628,6 +625,77 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     WorldObjectOperations.SetRotation(restoreId, new Quaternion(qx, qy, qz, qw));
                     break;
                 }
+                case "history_restore_add_link":
+                {
+                    var p = param.Split('|');
+                    if (p.Length < 2 || !int.TryParse(p[0], out int outWO) || !int.TryParse(p[1], out int inWO)) break;
+                    History.LinkPatch.SuppressNext = true;
+                    WorldObjectOperations.AddLink(outWO, inWO);
+                    break;
+                }
+                case "history_restore_remove_link":
+                {
+                    var p = param.Split('|');
+                    if (p.Length < 2 || !int.TryParse(p[0], out int outWO) || !int.TryParse(p[1], out int inWO)) break;
+                    History.LinkPatch.SuppressNext = true;
+                    WorldObjectOperations.RemoveLink(outWO, inWO);
+                    break;
+                }
+                case "history_restore_add_object_link":
+                {
+                    var p = param.Split('|');
+                    if (p.Length < 2 || !int.TryParse(p[0], out int connWO) || !int.TryParse(p[1], out int objWO)) break;
+                    History.LinkPatch.SuppressNextObjectLink = true;
+                    var ol = new ObjectLink(); ol.objectConnectorWOID = connWO; ol.objectWOID = objWO;
+                    MVGameControllerBase.OperationRequests.AddObjectLink(ol);
+                    break;
+                }
+                case "history_restore_remove_object_link":
+                {
+                    var p = param.Split('|');
+                    if (p.Length < 2 || !int.TryParse(p[0], out int connWO) || !int.TryParse(p[1], out int objWO)) break;
+                    var wocm = MVGameControllerBase.WOCM;
+                    if (wocm == null) break;
+                    int foundOlId = -1;
+                    foreach (MVWorldObjectClient wo in wocm.worldObjects.Values)
+                    {
+                        foreach (var ol in wo.ObjectLinkRefs)
+                            if (ol.objectConnectorWOID == connWO && ol.objectWOID == objWO) { foundOlId = ol.id; break; }
+                        if (foundOlId >= 0) break;
+                    }
+                    if (foundOlId >= 0) { History.LinkPatch.SuppressNextObjectLink = true; MVGameControllerBase.OperationRequests.RemoveObjectLink(foundOlId); }
+                    break;
+                }
+                case "object_set_visible":
+                    {
+                        var ps = param.Split('|');
+                        if (ps.Length == 2 && int.TryParse(ps[0], out int visId))
+                        {
+                            var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(visId);
+                            if (wo?.gameObject != null)
+                                wo.gameObject.SetActive(ps[1] == "true");
+                        }
+                        break;
+                    }
+                case "object_set_visible_batch":
+                    {
+                        var ps = param.Split('|');
+                        if (ps.Length == 2)
+                        {
+                            bool vis = ps[0] == "true";
+                            var ids = ps[1].Split(',');
+                            foreach (var idStr in ids)
+                            {
+                                if (int.TryParse(idStr, out int batchId))
+                                {
+                                    var wo = MVGameControllerBase.WOCM?.GetWorldObjectClient(batchId);
+                                    if (wo?.gameObject != null)
+                                        wo.gameObject.SetActive(vis);
+                                }
+                            }
+                        }
+                        break;
+                    }
                 case "properties_remove":
                     HandleRemove(PropertiesManager.SelectedWOId);
                     break;
@@ -689,6 +757,9 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 case "clipboard_paste_model":
                     Clipboard.ClipboardManager.PasteEditedModel();
+                    break;
+                case "clipboard_clear_before_paste":
+                    Clipboard.ClipboardManager.ClearBeforePaste = param == "true";
                     break;
                 // editor
                 // offset
@@ -836,7 +907,7 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     break;
                 case "camera_fov":
                     FovModifier.Enabled = true;
-                    FovModifier.Fov = float.Parse(param);
+                    FovModifier.Fov = float.Parse(param, System.Globalization.CultureInfo.InvariantCulture);
                     break;
                 case "camera_fov_reset":
                     FovModifier.Enabled = false;
@@ -859,13 +930,27 @@ new System.Collections.Generic.Queue<(int id, string text)>();
                     Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, false);
                     break;
                 case "camera_distance":
-                    CameraDistanceModifier.distance = float.Parse(param);
+                    CameraDistanceModifier.distance = float.Parse(param, System.Globalization.CultureInfo.InvariantCulture);
                     CameraDistanceModifier.ApplyChanges();
                     break;
                 case "camera_distance_reset":
                     CameraDistanceModifier.distance = CameraDistanceModifier.defaultDistance;
                     CameraDistanceModifier.ApplyChanges();
                     break;
+                case "preview_settings":
+                {
+                    var p = param.Split('|');
+                    var inv = System.Globalization.CultureInfo.InvariantCulture;
+                    if (p.Length >= 6)
+                    {
+                        GlLineDrawer.PreviewColor = new UnityEngine.Color(
+                            float.Parse(p[0], inv), float.Parse(p[1], inv),
+                            float.Parse(p[2], inv), float.Parse(p[3], inv));
+                        GlLineDrawer.PreviewMode = int.Parse(p[4]);
+                        GlLineDrawer.PreviewOpacity = float.Parse(p[5], inv);
+                    }
+                    break;
+                }
                 case "test":
                     break;
 
@@ -905,10 +990,18 @@ new System.Collections.Generic.Queue<(int id, string text)>();
         }
         if (newestId < 0) yield break;
 
-        var wo = wocm.GetWorldObject(newestId);
+        var wo = wocm.GetWorldObjectClient(newestId);
         if (wo == null) yield break;
 
-        wo.Scale = scale;
+        if (MVGameControllerBase.WOCM.IsType(newestId, MV.WorldObject.WorldObjectType.Group))
+        {
+            var group = wo.Cast<MVGroup>();
+            group.scale = scale;
+        }
+        else
+        {
+            wo.Scale = scale;
+        }
     }
 
 }

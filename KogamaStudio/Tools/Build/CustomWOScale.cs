@@ -79,4 +79,5 @@ internal static class CustomWOScale
         if (Enabled && scaledGroup != null)
             groupId = scaledGroup.id;
     }
+
 }

@@ -31,7 +31,7 @@ namespace inputhook {
         extern void Remove(HWND hWindow);
         extern void InitGetCursorPosHook();
         extern void RemoveGetCursorPosHook();
-        extern bool remapCursor;
+        extern bool allowSetCursorPos;
         static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 }
 

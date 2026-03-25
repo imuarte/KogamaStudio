@@ -15,9 +15,9 @@ namespace Recovery {
     static std::vector<Problem> problems;
     static int currentPage = 0; // 0 = advice page, 1 = problems list
 
-    void AddProblem(const std::string& objectId, const std::string& actionType, const std::string& description)
+    void AddProblem(const std::string& objectId, const std::string& description)
     {
-        problems.push_back({ description, objectId, actionType });
+        problems.push_back({ description, objectId });
     }
 
     static void RenderCorruptionPopup()
@@ -77,15 +77,10 @@ namespace Recovery {
 
                     ImGui::TextWrapped("%s", p.description.c_str());
 
-                    if (p.actionType == "remove" && !p.objectId.empty())
+                    if (!p.objectId.empty())
                     {
-                        if (ImGui::Button(TR(u8"Remove Object")))
-                            SendCommand((std::string(u8"recovery_remove_object|") + p.objectId).c_str());
-                    }
-                    else if (p.actionType == "teleport" && !p.objectId.empty())
-                    {
-                        if (ImGui::Button(TR(u8"Teleport to Object")))
-                            SendCommand((std::string(u8"recovery_teleport_to_object|") + p.objectId).c_str());
+                        if (ImGui::Button(TR(u8"Show in Explorer")))
+                            SendCommand((std::string(u8"explorer_select|") + p.objectId).c_str());
                     }
 
                     if (i < count - 1) ImGui::Separator();

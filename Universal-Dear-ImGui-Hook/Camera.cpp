@@ -52,7 +52,7 @@ namespace CameraPanel {
             // fov
             if (ImGui::Checkbox(TR(u8"Custom FOV"), &customFovEnabled))
             {
-                if (customFovEnabled) SendCommand((std::string(u8"camera_fov|") + std::to_string(fov)).c_str());
+                if (customFovEnabled) SendCommand((std::string(u8"camera_fov|") + FloatToStr(fov)).c_str());
                 else                  SendCommand(u8"camera_fov_reset");
             }
 
@@ -69,7 +69,7 @@ namespace CameraPanel {
             if (ImGui::Checkbox(TR(u8"Custom Camera Distance"), &customDistanceEnabled))
             {
                 if (customDistanceEnabled)
-                    SendCommand((std::string(u8"camera_distance|") + std::to_string(cameraDistance)).c_str());
+                    SendCommand((std::string(u8"camera_distance|") + FloatToStr(cameraDistance)).c_str());
                 else
                     SendCommand(u8"camera_distance_reset");
             }

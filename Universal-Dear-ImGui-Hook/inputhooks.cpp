@@ -6,8 +6,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 namespace inputhook {
     static WNDPROC sOriginalWndProc = nullptr;
 
-    bool remapCursor = false;
-
     static float GetViewportOffsetY()
     {
         return pipe::isFullscreen ? 0.0f : 10.0f;
@@ -15,6 +13,9 @@ namespace inputhook {
 
     typedef BOOL(WINAPI* GetCursorPosFn)(LPPOINT);
     static GetCursorPosFn oGetCursorPos = nullptr;
+
+    typedef BOOL(WINAPI* SetCursorPosFn)(int, int);
+    static SetCursorPosFn oSetCursorPos = nullptr;
 
     typedef SHORT(WINAPI* GetAsyncKeyStateFn)(int);
     static GetAsyncKeyStateFn oGetAsyncKeyState = nullptr;
@@ -45,6 +46,20 @@ namespace inputhook {
         return oGetKeyState(vKey);
     }
 
+    // Flag set by our own code before calling SetCursorPos, so we don't block ourselves
+    bool allowSetCursorPos = false;
+
+    static BOOL WINAPI hookSetCursorPos(int X, int Y)
+    {
+        // Block game's SetCursorPos when menu is open and cursor is visible
+        if (menu::isOpen && pipe::openMenu && !menu::welcomeOpen
+            && pipe::cursorVisible && !allowSetCursorPos)
+        {
+            return TRUE; // pretend success, but don't actually move cursor
+        }
+        return oSetCursorPos(X, Y);
+    }
+
     static POINT sCachedRemappedPt = {};
     static bool  sCachedValid = false;
 
@@ -54,18 +69,17 @@ namespace inputhook {
         if (!result || !globals::mainWindow)
             return result;
 
-        float imgW = menu::viewportImageMax.x - menu::viewportImageMin.x;
-        float imgH = menu::viewportImageMax.y - menu::viewportImageMin.y;
-
-        float screenX = (float)lpPoint->x;
-        float screenY = (float)lpPoint->y;
-
-        // if menu closed or remapping disabled, unfreeze and pass through
-        if (menu::welcomeOpen || !remapCursor || !menu::isOpen || !pipe::openMenu || !pipe::cursorVisible)
+        // Clear cache when menu is closed or remapping not applicable
+        if (!menu::isOpen || !pipe::openMenu || !pipe::cursorVisible || menu::welcomeOpen)
         {
             sCachedValid = false;
             return result;
         }
+
+        float imgW = menu::viewportImageMax.x - menu::viewportImageMin.x;
+        float imgH = menu::viewportImageMax.y - menu::viewportImageMin.y;
+        float screenX = (float)lpPoint->x;
+        float screenY = (float)lpPoint->y;
 
         bool inViewport = imgW > 0.0f && imgH > 0.0f &&
                           screenX >= menu::viewportImageMin.x && screenX <= menu::viewportImageMax.x &&
@@ -105,6 +119,13 @@ namespace inputhook {
             MH_EnableHook(fn);
         }
 
+        void* fnSCP = GetProcAddress(user32, "SetCursorPos");
+        if (fnSCP)
+        {
+            MH_CreateHook(fnSCP, hookSetCursorPos, reinterpret_cast<void**>(&oSetCursorPos));
+            MH_EnableHook(fnSCP);
+        }
+
         void* fnAKS = GetProcAddress(user32, "GetAsyncKeyState");
         if (fnAKS)
         {
@@ -130,6 +151,14 @@ namespace inputhook {
             MH_DisableHook(fn);
             MH_RemoveHook(fn);
             oGetCursorPos = nullptr;
+        }
+
+        void* fnSCP = GetProcAddress(user32, "SetCursorPos");
+        if (fnSCP)
+        {
+            MH_DisableHook(fnSCP);
+            MH_RemoveHook(fnSCP);
+            oSetCursorPos = nullptr;
         }
 
         void* fnAKS = GetProcAddress(user32, "GetAsyncKeyState");

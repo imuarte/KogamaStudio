@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "imgui/imgui_internal.h"
 #include "Explorer.h"
+#include "Blueprints.h"
+#include "Appearance.h"
 #include "MenuHelpers.h"
 #include "UILocale.h"
 #include "Inventory.h"
@@ -33,6 +35,10 @@ namespace Explorer {
     static bool     sortDesc = false;
     static float    camX = 0.f, camY = 0.f, camZ = 0.f;
     static float    addCubeScale = 1.0f;
+    // Settings
+    bool advancedGrouping        = false;
+    bool advGroupingWarnSkip     = false;
+    bool advGroupingWarnPending  = false;
 
     // --- Creation modal state ---
     static bool  createModalOpen  = false;
@@ -113,6 +119,7 @@ namespace Explorer {
     }
 
     void SetCameraPos(float x, float y, float z) { camX = x; camY = y; camZ = z; }
+    void GetCameraPos(float& x, float& y, float& z) { x = camX; y = camY; z = camZ; }
 
     static float DistSq(const ObjectEntry& e)
     {
@@ -129,6 +136,8 @@ namespace Explorer {
             if (obj.id == id) return &obj;
         return nullptr;
     }
+
+    const std::vector<ObjectEntry>& GetAllObjects() { return objectList; }
 
     static void HandleSelection(int idx)
     {
@@ -200,6 +209,7 @@ namespace Explorer {
             obj.type    = item.value("type", "");
             obj.itemId  = item.value("itemId", -1);
             obj.groupId = item.value("groupId", -1);
+            obj.isGroup = item.value("isGroup", false);
             obj.x       = item.value("x", 0.f);
             obj.y       = item.value("y", 0.f);
             obj.z       = item.value("z", 0.f);
@@ -220,64 +230,163 @@ namespace Explorer {
         RebuildChildrenMap();
     }
 
-    enum class ItemCategory { Pickup, Blueprint, Logic, AdvancedLogic, Special, Unknown };
+    enum class ItemCategory {
+        Group, CubeModel, Terrain, SpawnPoint, Pickup, Blueprint,
+        Logic, Light, Sound, Particle, Vehicle, Water, Skybox,
+        Avatar, Special, Unknown
+    };
 
-    static ItemCategory GetCategory(int itemId)
+    static ItemCategory GetCategory(const std::string& type)
     {
-        switch (itemId)
+        if (type == "Group")                         return ItemCategory::Group;
+        if (type == "CubeModel" ||
+            type == "RoundCube")                     return ItemCategory::CubeModel;
+        if (type == "CubeModelPrototypeTerrain" ||
+            type == "CubeModelTerrainFineGrained")   return ItemCategory::Terrain;
+        if (type == "SpawnPoint"    ||
+            type == "SpawnPointRed" ||
+            type == "SpawnPointGreen" ||
+            type == "SpawnPointBlue" ||
+            type == "SpawnPointYellow")              return ItemCategory::SpawnPoint;
+        if (type == "PickupItemHealthPack"   ||
+            type == "PickupItemCenterGun"    ||
+            type == "PickupItemImpulseGun"   ||
+            type == "PickupItemBazookaGun"   ||
+            type == "PickupItemRailGun"      ||
+            type == "PickupItemSpawner"      ||
+            type == "PickupCubeGun"          ||
+            type == "PickupMeleeWeapon"      ||
+            type == "PickupCostume"          ||
+            type == "PickupCustomGun"        ||
+            type == "CollectibleItem"        ||
+            type == "CollectTheItemCollectable" ||
+            type == "CollectTheItemCollectableInstance" ||
+            type == "GameCoin"               ||
+            type == "GameCoinChest"          ||
+            type == "GamePoint"              ||
+            type == "GamePointChest")        return ItemCategory::Pickup;
+        if (type == "Blueprint"              ||
+            type == "BlueprintActivator"     ||
+            type == "BlueprintFire"          ||
+            type == "BlueprintSmoke"         ||
+            type == "BlueprintExplosion"     ||
+            type == "BlueprintDoor"          ||
+            type == "BlueprintMeleeWeapon"   ||
+            type == "BlueprintCostume"       ||
+            type == "BlueprintCustomGun")    return ItemCategory::Blueprint;
+        if (type == "Action"           ||
+            type == "Mover"            ||
+            type == "Path"             ||
+            type == "PathNode"         ||
+            type == "TriggerBox"       ||
+            type == "TriggerCube"      ||
+            type == "ToggleBox"        ||
+            type == "PulseBox"         ||
+            type == "RandomBox"        ||
+            type == "Negate"           ||
+            type == "And"              ||
+            type == "Battery"          ||
+            type == "TimeTrigger"      ||
+            type == "PressurePlate"    ||
+            type == "ModelToggle"      ||
+            type == "ModelTransparency"||
+            type == "CountingCube"     ||
+            type == "GravityCube"      ||
+            type == "ShootableButton"  ||
+            type == "UseLever"         ||
+            type == "WindTurbine"      ||
+            type == "TextMsg"          ||
+            type == "Teleporter"       ||
+            type == "Goal"             ||
+            type == "Flag"             ||
+            type == "CheckPoint"       ||
+            type == "KillLimit"        ||
+            type == "OculusKillLimit"  ||
+            type == "TeamEditor"       ||
+            type == "CollectTheItem"   ||
+            type == "CollectTheItemDropOff" ||
+            type == "TimeAttackFlag"   ||
+            type == "Door"             ||
+            type == "Explosives"       ||
+            type == "TestLogicCube"    ||
+            type == "SentryGun"        ||
+            type == "Skybox")          return ItemCategory::Logic;
+        if (type == "PointLight"  ||
+            type == "LightPreset" ||
+            type == "Theme"       ||
+            type == "CameraSettings") return ItemCategory::Light;
+        if (type == "SoundEmitter" ||
+            type == "GlobalSoundEmitter") return ItemCategory::Sound;
+        if (type == "ParticleEmitter" ||
+            type == "Fire"            ||
+            type == "Smoke")          return ItemCategory::Particle;
+        if (type == "HoverCraft"   ||
+            type == "MonoPlane"    ||
+            type == "JetPack"      ||
+            type == "HamsterWheel" ||
+            type == "Ghost"        ||
+            type == "AdvancedGhost"||
+            type == "ShrinkGun"    ||
+            type == "WorldObjectSpawnerVehicle" ||
+            type == "WorldObjectSpawnerVehicleEnergy" ||
+            type == "VehicleEnergy")  return ItemCategory::Vehicle;
+        if (type == "WaterPlane" ||
+            type == "WaterPlanePreset") return ItemCategory::Water;
+        if (type == "PlayModeAvatar"  ||
+            type == "BuildModeAvatar" ||
+            type == "AvatarSpawnRoleCreator") return ItemCategory::Avatar;
+        if (type == "GameOptionsDataObject" ||
+            type == "GamePassProgressionDataObject" ||
+            type == "Skybox")         return ItemCategory::Special;
+        return ItemCategory::Unknown;
+    }
+
+    static const char* TypeIcon(const std::string& type, const std::string& id = "")
+    {
+        // Logic circuit groups get a special icon
+        if (!id.empty() && GetCategory(type) == ItemCategory::Group && Blueprints::IsLogicCircuit(id))
+            return ICON_FA_NETWORK_WIRED;
+        switch (GetCategory(type))
         {
-        case 10355: case 10353: case 10360: case 10354: case 10359: case 10356:
-        case 7690141: case 239796: case 239800: case 1165835: case 1165838:
-        case 12435368: case 46140: case 12730220: case 10352: case 10358: case 1165831:
-        case 91197: case 1812739: case 1812737: case 3785736: case 3785733:
-        case 3785734: case 3785732: case 8880186: case 8880187: case 12496365:
-            return ItemCategory::Pickup;
-        case 13481: case 19674: case 20757: case 20756: case 75226: case 75227:
-        case 61222: case 12226728: case 349297: case 97157: case 17789:
-        case 16408: case 18688: case 9272265: case 6225654:
-        case 12305637: case 12324723: case 12339395:
-            return ItemCategory::Blueprint;
-        case 91196: case 10377: case 10373: case 10374: case 10372: case 2379699:
-        case 9016173: case 10375: case 10371: case 10350: case 1165828: case 1165823:
-        case 8250560: case 54338: case 10365: case 10380: case 7690139: case 3785730:
-        case 10361: case 10362: case 10363: case 10364:
-            return ItemCategory::Logic;
-        case 4113945: case 5435011: case 10366: case 10368: case 10378:
-        case 10367: case 10369: case 9016174: case 10376: case 12532422:
-        case 10379: case 4113944: case 10370:
-            return ItemCategory::AdvancedLogic;
-        case 75579: case 10348:
-            return ItemCategory::Special;
-        default:
-            return ItemCategory::Unknown;
+        case ItemCategory::Group:       return ICON_FA_LAYER_GROUP;
+        case ItemCategory::CubeModel:   return ICON_FA_CUBE;
+        case ItemCategory::Terrain:     return ICON_FA_MOUNTAIN;
+        case ItemCategory::SpawnPoint:  return ICON_FA_LOCATION_DOT;
+        case ItemCategory::Pickup:      return ICON_FA_STAR;
+        case ItemCategory::Blueprint:   return ICON_FA_WRENCH;
+        case ItemCategory::Logic:       return ICON_FA_GEAR;
+        case ItemCategory::Light:       return ICON_FA_LIGHTBULB;
+        case ItemCategory::Sound:       return ICON_FA_VOLUME_HIGH;
+        case ItemCategory::Particle:    return ICON_FA_FIRE;
+        case ItemCategory::Vehicle:     return ICON_FA_GAMEPAD;
+        case ItemCategory::Water:       return ICON_FA_CIRCLE;
+        case ItemCategory::Avatar:      return ICON_FA_USER;
+        case ItemCategory::Special:     return ICON_FA_GEARS;
+        default:                        return ICON_FA_CIRCLE;
         }
     }
 
-    static const char* TypeIcon(const std::string& type, int itemId)
+    static ImVec4 TypeColor(const std::string& type, const std::string& id = "")
     {
-        switch (GetCategory(itemId))
+        if (!id.empty() && GetCategory(type) == ItemCategory::Group && Blueprints::IsLogicCircuit(id))
+            return ImVec4(0.30f, 0.90f, 0.80f, 1.f); // cyan/teal for KogamaStudio special groups
+        switch (GetCategory(type))
         {
-        case ItemCategory::Pickup:        return ICON_FA_STAR;
-        case ItemCategory::Blueprint:     return ICON_FA_WRENCH;
-        case ItemCategory::Logic:         return ICON_FA_GEAR;
-        case ItemCategory::AdvancedLogic: return ICON_FA_GEARS;
-        case ItemCategory::Special:
-            return (itemId == 10348) ? ICON_FA_LAYER_GROUP : ICON_FA_CUBE;
-        default:
-            return (type.find("Group") != std::string::npos) ? ICON_FA_LAYER_GROUP : ICON_FA_CUBE;
-        }
-    }
-
-    static ImVec4 TypeColor(int itemId)
-    {
-        switch (GetCategory(itemId))
-        {
-        case ItemCategory::Pickup:        return ImVec4(1.00f, 0.85f, 0.20f, 1.f);
-        case ItemCategory::Blueprint:     return ImVec4(0.40f, 0.85f, 1.00f, 1.f);
-        case ItemCategory::Logic:         return ImVec4(1.00f, 0.65f, 0.25f, 1.f);
-        case ItemCategory::AdvancedLogic: return ImVec4(0.80f, 0.55f, 1.00f, 1.f);
-        case ItemCategory::Special:       return ImVec4(0.55f, 0.90f, 0.65f, 1.f);
-        default:                          return ImVec4(0.60f, 0.60f, 0.60f, 1.f);
+        case ItemCategory::Group:       return ImVec4(1.00f, 1.00f, 1.00f, 1.f);
+        case ItemCategory::CubeModel:   return ImVec4(0.60f, 0.60f, 0.60f, 1.f);
+        case ItemCategory::Terrain:     return ImVec4(0.55f, 0.75f, 0.45f, 1.f);
+        case ItemCategory::SpawnPoint:  return ImVec4(0.30f, 0.85f, 0.50f, 1.f);
+        case ItemCategory::Pickup:      return ImVec4(1.00f, 0.85f, 0.20f, 1.f);
+        case ItemCategory::Blueprint:   return ImVec4(0.40f, 0.85f, 1.00f, 1.f);
+        case ItemCategory::Logic:       return ImVec4(1.00f, 0.65f, 0.25f, 1.f);
+        case ItemCategory::Light:       return ImVec4(1.00f, 0.95f, 0.60f, 1.f);
+        case ItemCategory::Sound:       return ImVec4(0.70f, 0.50f, 1.00f, 1.f);
+        case ItemCategory::Particle:    return ImVec4(1.00f, 0.40f, 0.20f, 1.f);
+        case ItemCategory::Vehicle:     return ImVec4(0.40f, 0.75f, 1.00f, 1.f);
+        case ItemCategory::Water:       return ImVec4(0.20f, 0.70f, 1.00f, 1.f);
+        case ItemCategory::Avatar:      return ImVec4(0.90f, 0.60f, 0.90f, 1.f);
+        case ItemCategory::Special:     return ImVec4(0.80f, 0.80f, 0.80f, 1.f);
+        default:                        return ImVec4(0.45f, 0.45f, 0.45f, 1.f);
         }
     }
 
@@ -287,7 +396,7 @@ namespace Explorer {
     {
         ObjectEntry& obj = objectList[idx];
         std::string label   = obj.name.empty() ? obj.type : obj.name;
-        std::string display = std::string(TypeIcon(obj.type, obj.itemId)) + " " + label;
+        std::string display = std::string(TypeIcon(obj.type, obj.id)) + " " + label;
 
         if (renameTargetId == obj.id)
         {
@@ -314,7 +423,7 @@ namespace Explorer {
         }
 
         bool isSelected = selectedIds.count(obj.id) > 0;
-        ImGui::PushStyleColor(ImGuiCol_Text, TypeColor(obj.itemId));
+        ImGui::PushStyleColor(ImGuiCol_Text, TypeColor(obj.type, obj.id));
         bool clicked = ImGui::Selectable((display + u8"##" + obj.id).c_str(), isSelected,
             ImGuiSelectableFlags_AllowOverlap);
         ImGui::PopStyleColor();
@@ -387,6 +496,20 @@ namespace Explorer {
                     }
                 }
             }
+            bool isGroup = obj.type.find("Group") != std::string::npos;
+            if (advancedGrouping || isGroup)
+            {
+                if (const ImGuiPayload* payload2 = ImGui::AcceptDragDropPayload(u8"EXPLORER_ITEMS",
+                    ImGuiDragDropFlags_AcceptNoDrawDefaultRect))
+                {
+                    SendCommand((std::string(u8"explorer_move_to_group|") + obj.id + u8"|" + (const char*)payload2->Data).c_str());
+                }
+                if (const ImGuiPayload* payload2 = ImGui::AcceptDragDropPayload(u8"INVENTORY_ITEM",
+                    ImGuiDragDropFlags_AcceptNoDrawDefaultRect))
+                {
+                    SendCommand((std::string(u8"world_place_item_in_group|") + (const char*)payload2->Data + u8"|" + obj.id).c_str());
+                }
+            }
             ImGui::EndDragDropTarget();
         }
 
@@ -410,7 +533,7 @@ namespace Explorer {
     {
         ObjectEntry& obj = objectList[idx];
         std::string label   = obj.name.empty() ? obj.type : obj.name;
-        std::string display = std::string(TypeIcon(obj.type, obj.itemId)) + " " + label;
+        std::string display = std::string(TypeIcon(obj.type, obj.id)) + " " + label;
 
         if (renameTargetId == obj.id)
         {
@@ -438,12 +561,33 @@ namespace Explorer {
 
         bool isSelected = selectedIds.count(obj.id) > 0;
 
+        ImGui::Spacing();
+
+        bool hasChildren = false;
+        if (childrenMap.count(obj.id) > 0)
+        {
+            if (advancedGrouping)
+            {
+                hasChildren = true;
+            }
+            else
+            {
+                for (int cidx : childrenMap.at(obj.id))
+                {
+                    if (objectList[cidx].groupId == rootGroupId) { hasChildren = true; break; }
+                    const ObjectEntry* parent = FindById(std::to_string(objectList[cidx].groupId));
+                    if (parent && parent->type.find("Group") != std::string::npos) { hasChildren = true; break; }
+                }
+            }
+        }
+
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow
             | ImGuiTreeNodeFlags_SpanAvailWidth
             | ImGuiTreeNodeFlags_AllowOverlap;
+        if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf;
         if (isSelected) flags |= ImGuiTreeNodeFlags_Selected;
 
-        ImGui::PushStyleColor(ImGuiCol_Text, TypeColor(obj.itemId));
+        ImGui::PushStyleColor(ImGuiCol_Text, TypeColor(obj.type, obj.id));
         bool open = ImGui::TreeNodeEx((display + u8"##" + obj.id).c_str(), flags);
         ImGui::PopStyleColor();
 
@@ -477,20 +621,66 @@ namespace Explorer {
             ImGui::EndDragDropSource();
         }
 
-        if (obj.type.find("Group") != std::string::npos && ImGui::BeginDragDropTarget())
+        bool nodeIsGroup = obj.type.find("Group") != std::string::npos;
+        bool isLC = Blueprints::IsLogicCircuit(obj.id);
+        bool canDropInto = (advancedGrouping || nodeIsGroup) && !isLC;
+        if (ImGui::BeginDragDropTarget())
         {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(u8"EXPLORER_ITEMS"))
+            ImVec2 itemMin  = ImGui::GetItemRectMin();
+            ImVec2 itemMax  = ImGui::GetItemRectMax();
+            float  mouseY   = ImGui::GetMousePos().y;
+            float  h        = itemMax.y - itemMin.y;
+            // For groups: top/bottom 30% = reorder, center = drop into
+            // For non-groups: always reorder
+            bool before = mouseY < itemMin.y + h * 0.30f;
+            bool after  = mouseY > itemMax.y - h * 0.30f;
+            bool reorder = !canDropInto || before || after;
+
+            if (reorder)
             {
-                SendCommand((std::string(u8"explorer_move_to_group|") + obj.id + u8"|" + (const char*)payload->Data).c_str());
+                bool placeBefore = canDropInto ? before : (mouseY < (itemMin.y + itemMax.y) * 0.5f);
+                float lineY = placeBefore ? itemMin.y : itemMax.y;
+                ImGui::GetWindowDrawList()->AddLine(
+                    ImVec2(itemMin.x, lineY), ImVec2(itemMax.x, lineY),
+                    IM_COL32(255, 255, 255, 220), 2.0f);
+
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(u8"EXPLORER_ITEM",
+                    ImGuiDragDropFlags_AcceptNoDrawDefaultRect))
+                {
+                    int src      = *(const int*)payload->Data;
+                    int insertAt = placeBefore ? idx : idx + 1;
+                    if (src < insertAt) insertAt--;
+                    if (src != insertAt && src >= 0 && src < (int)objectList.size())
+                    {
+                        ObjectEntry tmp = objectList[src];
+                        objectList.erase(objectList.begin() + src);
+                        objectList.insert(objectList.begin() + insertAt, tmp);
+                        RebuildChildrenMap();
+                        std::string order;
+                        for (int i = 0; i < (int)objectList.size(); i++)
+                        {
+                            if (i > 0) order += ",";
+                            order += objectList[i].id;
+                        }
+                        SendCommand((std::string(u8"explorer_set_order|") + order).c_str());
+                    }
+                }
             }
-            else if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(u8"EXPLORER_ITEM"))
+            else
             {
-                int src = *(const int*)payload->Data;
-                SendCommand((std::string(u8"explorer_move_to_group|") + obj.id + u8"|" + objectList[src].id).c_str());
-            }
-            else if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(u8"INVENTORY_ITEM"))
-            {
-                SendCommand((std::string(u8"world_place_item_in_group|") + (const char*)payload->Data + u8"|" + obj.id).c_str());
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(u8"EXPLORER_ITEMS"))
+                {
+                    SendCommand((std::string(u8"explorer_move_to_group|") + obj.id + u8"|" + (const char*)payload->Data).c_str());
+                }
+                else if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(u8"EXPLORER_ITEM"))
+                {
+                    int src = *(const int*)payload->Data;
+                    SendCommand((std::string(u8"explorer_move_to_group|") + obj.id + u8"|" + objectList[src].id).c_str());
+                }
+                else if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(u8"INVENTORY_ITEM"))
+                {
+                    SendCommand((std::string(u8"world_place_item_in_group|") + (const char*)payload->Data + u8"|" + obj.id).c_str());
+                }
             }
             ImGui::EndDragDropTarget();
         }
@@ -503,12 +693,25 @@ namespace Explorer {
                 renameFocused  = false;
                 strncpy_s(renameBuf, sizeof(renameBuf), label.c_str(), _TRUNCATE);
             }
+
+            // Hide group creation options for logic circuit groups
+            if (!isLC) {
+                ImGui::Separator();
+                int gid = std::stoi(obj.id);
+                if (ImGui::MenuItem((std::string(ICON_FA_LAYER_GROUP) + u8"  " + TR(u8"Add Group inside")).c_str()))
+                    { OpenCreateModal(gid); ImGui::CloseCurrentPopup(); }
+                if (ImGui::MenuItem((std::string(ICON_FA_LAYER_GROUP) + u8"  " + TR(u8"Add Group here")).c_str()))
+                    { OpenCreateModal(obj.groupId); ImGui::CloseCurrentPopup(); }
+            }
+
             ImGui::Separator();
-            int gid = std::stoi(obj.id);
-            if (ImGui::MenuItem((std::string(ICON_FA_LAYER_GROUP) + u8"  " + TR(u8"Add Group inside")).c_str()))
-                { OpenCreateModal(gid); ImGui::CloseCurrentPopup(); }
-            if (ImGui::MenuItem((std::string(ICON_FA_LAYER_GROUP) + u8"  " + TR(u8"Add Group here")).c_str()))
-                { OpenCreateModal(obj.groupId); ImGui::CloseCurrentPopup(); }
+            if (isLC) {
+                if (ImGui::MenuItem((std::string(ICON_FA_NETWORK_WIRED) + u8"  " + TR(u8"Unmark Logic Circuit")).c_str()))
+                    Blueprints::SetLogicCircuit(obj.id, false);
+            } else {
+                if (ImGui::MenuItem((std::string(ICON_FA_NETWORK_WIRED) + u8"  " + TR(u8"Mark as Logic Circuit")).c_str()))
+                    Blueprints::SetLogicCircuit(obj.id, true);
+            }
             ImGui::EndPopup();
         }
 
@@ -525,11 +728,12 @@ namespace Explorer {
         if (it == childrenMap.end()) return;
         for (int idx : it->second)
         {
-            bool isGroup = objectList[idx].type.find("Group") != std::string::npos;
-            if (childrenMap.count(objectList[idx].id) || isGroup)
-                RenderGroupNode(idx);
-            else
-                RenderItem(idx);
+            if (!advancedGrouping && objectList[idx].groupId != rootGroupId)
+            {
+                const ObjectEntry* parent = FindById(std::to_string(objectList[idx].groupId));
+                if (!parent || parent->type.find("Group") == std::string::npos) continue;
+            }
+            RenderGroupNode(idx);
         }
     }
 
@@ -557,10 +761,64 @@ namespace Explorer {
                 else if (sel)
                     targetId = sel->groupId;
             }
-            if (ImGui::MenuItem(ICON_FA_LAYER_GROUP u8"  Group"))
+
+            // Check if target is a logic circuit — block creating children inside it
+            bool targetIsLC = Blueprints::IsLogicCircuit(std::to_string(targetId));
+
+            ImGui::TextDisabled(u8"Kogama");
+            ImGui::Separator();
+            ImGui::BeginDisabled(targetIsLC);
+            if (ImGui::MenuItem((std::string(ICON_FA_LAYER_GROUP) + u8"  " + TR(u8"Group")).c_str()))
                 { OpenCreateModal(targetId); ImGui::CloseCurrentPopup(); }
+            ImGui::EndDisabled();
+
+            ImGui::Spacing();
+            ImGui::TextDisabled(u8"KogamaStudio");
+            ImGui::Separator();
+            ImGui::BeginDisabled(targetIsLC);
+            if (ImGui::MenuItem((std::string(ICON_FA_PERSON_RUNNING) + u8"  " + TR(u8"NPC")).c_str()))
+                { ImGui::CloseCurrentPopup(); }
+            if (ImGui::MenuItem((std::string(ICON_FA_NETWORK_WIRED) + u8"  " + TR(u8"Logic Circuit")).c_str()))
+                { Blueprints::CreateLogicCircuit(targetId); ImGui::CloseCurrentPopup(); }
+            ImGui::EndDisabled();
+
             ImGui::EndPopup();
         }
+        // Warning modal
+        if (advGroupingWarnPending)
+        {
+            ImGui::OpenPopup(u8"##adv_grouping_warn");
+            advGroupingWarnPending = false;
+        }
+        if (ImGui::BeginPopupModal(u8"##adv_grouping_warn", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.85f, 0.1f, 1.f));
+            ImGui::Text(ICON_FA_TRIANGLE_EXCLAMATION u8"  %s", TR(u8"Advanced Grouping"));
+            ImGui::PopStyleColor();
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::TextWrapped(TR(u8"This is a powerful feature that allows placing any object inside any other object, bypassing normal grouping rules."));
+            ImGui::Spacing();
+            ImGui::TextWrapped(TR(u8"Used irresponsibly, it can easily corrupt your world or cause unexpected behavior. Proceed with caution."));
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Checkbox(TR(u8"Don't show this warning again"), &advGroupingWarnSkip);
+            ImGui::Spacing();
+            if (ImGui::Button(TR(u8"Enable anyway"), ImVec2(140, 0)))
+            {
+                advancedGrouping = true;
+                Appearance::SaveSettings();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(TR(u8"Cancel"), ImVec2(80, 0)))
+            {
+                advGroupingWarnSkip = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_FILTER))
             ImGui::OpenPopup(u8"##sort_popup");
@@ -670,6 +928,8 @@ namespace Explorer {
             }
             ImGui::EndDragDropTarget();
         }
+
+
         ImGui::EndChild();
         ImGui::End();
 

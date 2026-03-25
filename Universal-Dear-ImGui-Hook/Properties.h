@@ -18,5 +18,6 @@ namespace Properties {
     extern int itemId;
     extern int groupId;
     extern int prototypeId;
+    extern std::string objectType;
 
 }
