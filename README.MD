@@ -4,7 +4,7 @@
 
 A mod for KoGaMa that adds useful features to build mode.
   
-![Example](images/menu.png)
+![Example](images/v050.png)
 
 ## Installation
 
