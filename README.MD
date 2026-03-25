@@ -27,12 +27,10 @@ If the mod loads but the menu doesn't show, your antivirus is likely blocking th
 The fog effect is a safety feature-MelonLoader has compatibility issues with KoGaMa, so fog prevents crashes in restricted areas. It will reduce when you enter the Shop.
 
 ## Credits
-
 - [Sh0ckFR](https://github.com/Sh0ckFR/Universal-Dear-ImGui-Hook) - ImGui Hook
 - [KogamaTools](https://github.com/Beckowl/KogamaTools) - Base code
 - [Dear ImGui](https://github.com/ocornut/imgui) - UI Framework
 
 ## Support
-
 [Discord Server](https://discord.gg/u6tKuP3k4M)
 
