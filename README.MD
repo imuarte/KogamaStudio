@@ -1,6 +1,19 @@
 <h1>
     <img src="images/logo.svg" alt="KogamaStudio" width="400" /> 
 </h1>
+<p align="center">
+  <a href="https://github.com/imuarte/KogamaStudio/releases/download/v0.5.0/KogamaStudio-Installer.exe">
+    <img src="https://img.shields.io/badge/Download-Installer-00c853?style=for-the-badge&logo=github" />
+  </a>
+
+  <a href="https://github.com/imuarte/KogamaStudio/releases">
+    <img src="https://img.shields.io/badge/Version-v0.5.0-blue?style=for-the-badge" />
+  </a>
+
+  <a href="https://discord.gg/u6tKuP3k4M">
+    <img src="https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord" />
+  </a>
+</p>
 
 A mod for KoGaMa that adds useful features to build mode.
   
