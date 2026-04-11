@@ -9,7 +9,7 @@ A mod for KoGaMa that adds useful features to build mode.
 ## Installation
 
 ### Automatic
-1. Download `KogamaStudio-Installer.exe`
+1. Download [KogamaStudio-Installer.exe](https://github.com/imuarte/KogamaStudio/releases/latest/download/KogamaStudio-Installer.exe)
 2. Run installer and select server
 3. Done!
 
