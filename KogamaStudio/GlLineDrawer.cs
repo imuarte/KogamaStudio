@@ -14,7 +14,7 @@ internal static class GlLineDrawer
 
     // Preview settings (set from pipe command)
     internal static Color PreviewColor = Color.yellow;
-    internal static int PreviewMode = 0;       // 0 = Outline, 1 = Surface Grid, 2 = Full Grid
+    internal static int   PreviewMode = 0;       // 0 = Outline, 1 = Surface Grid, 2 = Full Grid
     internal static float PreviewOpacity = 1.0f;
 
     internal static void Init()
@@ -36,12 +36,12 @@ internal static class GlLineDrawer
     // Topology: 6 faces of a cube defined by vertex indices (0-7).
     private static readonly int[][] FaceVertices =
     {
-        new[] { 0, 3, 2, 1 }, // Bottom
+        new[] { 0, 1, 2, 3 }, // Bottom
         new[] { 4, 5, 6, 7 }, // Top
         new[] { 0, 1, 6, 7 }, // Front
         new[] { 2, 3, 4, 5 }, // Back
-        new[] { 0, 7, 4, 3 }, // Left
-        new[] { 1, 2, 5, 6 }  // Right
+        new[] { 0, 3, 4, 7 }, // Left
+        new[] { 1, 6, 5, 2 }  // Right
     };
 
     private static readonly List<((int, int, int) a, (int, int, int) b)> _cachedEdges = new();
@@ -95,104 +95,186 @@ internal static class GlLineDrawer
             }
             else
             {
-                // Modes 0 & 1: Topology-based processing
-                var faceCounts = new Dictionary<((int, int, int), (int, int, int), (int, int, int), (int, int, int)), int>();
+                // Modes 0 & 1: CSG-like Architecture with Global Vertex Registry
+
+                // Faza 1: Build Global Vertex Registry and Face Registry
+                var vSetAll = new HashSet<(int, int, int)>();
+                var faceCounts = new Dictionary<((int,int,int),(int,int,int),(int,int,int),(int,int,int)), (List<(int ci, int fi)>, (long,long,long))>();
                 var allGrid = new (int, int, int)[cubes.Count][];
 
-                // Pass 1: Count structural faces
                 for (int ci = 0; ci < cubes.Count; ci++)
                 {
                     var cube = cubes[ci];
                     var c = ClipboardManager.CornerBytesToCoords(cube.Corners);
                     var gi = new (int, int, int)[8];
+                    
                     for (int i = 0; i < 8; i++)
+                    {
                         gi[i] = (cube.X * 4 + c[i].z, cube.Y * 4 + c[i].y, cube.Z * 4 + c[i].x);
+                        vSetAll.Add(gi[i]); // Register every physical point in the model
+                    }
+                    
                     allGrid[ci] = gi;
 
-                    foreach (var fv in FaceVertices)
+                    for (int fi = 0; fi < FaceVertices.Length; fi++)
                     {
-                        var fk = CreateFaceKey(gi[fv[0]], gi[fv[1]], gi[fv[2]], gi[fv[3]]);
-                        // Skip fully collapsed faces (all vertices in the same spot or degenerate line)
-                        if (fk.Item1 == fk.Item3) continue;
+                        var fv = FaceVertices[fi];
+                        var p0 = gi[fv[0]]; var p1 = gi[fv[1]]; 
+                        var p2 = gi[fv[2]]; var p3 = gi[fv[3]];
 
-                        faceCounts.TryGetValue(fk, out var count);
-                        faceCounts[fk] = count + 1;
-                    }
-                }
-
-                // Pass 2: Extract external faces and process edges
-                var externalEdgeNormals = new Dictionary<((int, int, int), (int, int, int)), List<(long, long, long)>>();
-                var surfaceEdges = new HashSet<((int, int, int), (int, int, int))>();
-
-                for (int ci = 0; ci < cubes.Count; ci++)
-                {
-                    var gi = allGrid[ci];
-                    foreach (var fv in FaceVertices)
-                    {
-                        var p0 = gi[fv[0]];
-                        var p1 = gi[fv[1]];
-                        var p2 = gi[fv[2]];
-                        var p3 = gi[fv[3]];
+                        var normal = CalcNormal(p0, p1, p2, p3);
+                        if (normal.x == 0 && normal.y == 0 && normal.z == 0) continue; // Skip collapsed faces
 
                         var fk = CreateFaceKey(p0, p1, p2, p3);
-                        if (!faceCounts.ContainsKey(fk)) continue;
-
-                        // If face appears exactly once, it is exposed to the outside
-                        if (faceCounts[fk] == 1)
+                        if (!faceCounts.TryGetValue(fk, out var data))
                         {
-                            var edges = new[] {
-                                CreateEdgeKey(p0, p1),
-                                CreateEdgeKey(p1, p2),
-                                CreateEdgeKey(p2, p3),
-                                CreateEdgeKey(p3, p0)
-                            };
-
-                            if (PreviewMode == 1)
-                            {
-                                foreach (var ek in edges)
-                                {
-                                    if (ek.Item1 != ek.Item2) // Skip zero-length edge
-                                        surfaceEdges.Add(ek);
-                                }
-                            }
-                            else if (PreviewMode == 0)
-                            {
-                                var normal = CalcNormal(p0, p1, p2, p3);
-
-                                foreach (var ek in edges)
-                                {
-                                    if (ek.Item1 == ek.Item2) continue; // Skip zero-length edge
-
-                                    if (!externalEdgeNormals.TryGetValue(ek, out var nList))
-                                    {
-                                        nList = new List<(long, long, long)>();
-                                        externalEdgeNormals[ek] = nList;
-                                    }
-                                    nList.Add(normal);
-                                }
-                            }
+                            data = (new List<(int ci, int fi)>(), normal);
+                            faceCounts[fk] = data;
                         }
+                        data.Item1.Add((ci, fi));
                     }
                 }
 
-                // Finalize Output for Modes 0 & 1
-                if (PreviewMode == 1)
-                {
-                    _cachedEdges.AddRange(surfaceEdges);
-                }
-                else if (PreviewMode == 0)
-                {
-                    foreach (var kvp in externalEdgeNormals)
-                    {
-                        var ek = kvp.Key;
-                        var normals = kvp.Value;
+                // Faza 2 & 3: Fragment Exposed Hull Geometry (Unconditional Edge Splitting)
+                var atomicEdges = new Dictionary<((int,int,int), (int,int,int)), List<(long,long,long)>>();
+                var exposedFaceList = new List<((int,int,int)[], (long,long,long))>();
 
-                        // Draw if it's a boundary edge OR if connecting faces are not coplanar (sharp crease)
-                        if (normals.Count == 1 ||
-                           (normals.Count == 2 && !AreParallel(normals[0], normals[1])) ||
-                           normals.Count > 2)
+                foreach (var kvp in faceCounts)
+                {
+                    var exposed = kvp.Value.Item1;
+                    if (exposed.Count != 1) continue; // Cull perfectly matching coplanar hidden faces.
+
+                    var ci = exposed[0].ci;
+                    var fi = exposed[0].fi;
+                    var gi = allGrid[ci];
+                    var fv = FaceVertices[fi];
+                    var normal = kvp.Value.Item2;
+
+                    var pts = new[] { gi[fv[0]], gi[fv[1]], gi[fv[2]], gi[fv[3]] };
+                    exposedFaceList.Add((pts, normal));
+                }
+
+                foreach (var face in exposedFaceList)
+                {
+                    var pts = face.Item1;
+                    var normal = face.Item2;
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        var A = pts[i];
+                        var B = pts[(i + 1) % 4];
+                        if (A == B) continue;
+
+                        int minX = System.Math.Min(A.Item1, B.Item1);
+                        int maxX = System.Math.Max(A.Item1, B.Item1);
+                        int minY = System.Math.Min(A.Item2, B.Item2);
+                        int maxY = System.Math.Max(A.Item2, B.Item2);
+                        int minZ = System.Math.Min(A.Item3, B.Item3);
+                        int maxZ = System.Math.Max(A.Item3, B.Item3);
+
+                        var splits = new List<((int,int,int) v, long distSq)>();
+
+                        // Test against ALL registered vertices to guarantee no missed T-junctions
+                        foreach (var v in vSetAll)
                         {
-                            _cachedEdges.Add(ek);
+                            if (v.Item1 < minX || v.Item1 > maxX ||
+                                v.Item2 < minY || v.Item2 > maxY ||
+                                v.Item3 < minZ || v.Item3 > maxZ) continue;
+
+                            if (v == A || v == B) continue;
+
+                            if (IsPointOnSegment(A, B, v))
+                            {
+                                long dx = v.Item1 - A.Item1;
+                                long dy = v.Item2 - A.Item2;
+                                long dz = v.Item3 - A.Item3;
+                                splits.Add((v, dx * dx + dy * dy + dz * dz));
+                            }
+                        }
+
+                        splits.Sort((a, b) => a.distSq.CompareTo(b.distSq));
+
+                        var current = A;
+                        foreach (var split in splits)
+                        {
+                            var v = split.v;
+                            var key = CreateEdgeKey(current, v);
+                            if (!atomicEdges.TryGetValue(key, out var list))
+                            {
+                                list = new List<(long, long, long)>();
+                                atomicEdges[key] = list;
+                            }
+                            list.Add(normal);
+                            current = v;
+                        }
+                        
+                        var lastKey = CreateEdgeKey(current, B);
+                        if (!atomicEdges.TryGetValue(lastKey, out var lastList))
+                        {
+                            lastList = new List<(long, long, long)>();
+                            atomicEdges[lastKey] = lastList;
+                        }
+                        lastList.Add(normal);
+                    }
+                }
+
+                // Faza 4: Output Resolve with Internal Cancellation
+                foreach (var kvp in atomicEdges)
+                {
+                    var ek = kvp.Key;
+                    var normals = kvp.Value;
+
+                    // Resolve geometry cancellations: opposite normals annihilate each other
+                    var resolved = new List<(long, long, long)>();
+                    foreach (var n in normals)
+                    {
+                        var opp = (-n.Item1, -n.Item2, -n.Item3);
+                        bool foundOpposite = false;
+                        
+                        for (int i = 0; i < resolved.Count; i++)
+                        {
+                            if (resolved[i] == opp)
+                            {
+                                resolved.RemoveAt(i);
+                                foundOpposite = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!foundOpposite)
+                            resolved.Add(n);
+                    }
+
+                    if (resolved.Count == 0) continue; // Completely internal hidden edge
+
+                    if (PreviewMode == 1)
+                    {
+                        _cachedEdges.Add(ek); // Exposed to surface grid
+                    }
+                    else if (PreviewMode == 0)
+                    {
+                        if (resolved.Count == 1)
+                        {
+                            _cachedEdges.Add(ek); // Boundary line
+                        }
+                        else 
+                        {
+                            // If normals are different, it's a crease. If they are all exactly the same, it's a flat surface (hide).
+                            bool allSame = true;
+                            var firstN = resolved[0];
+                            for (int i = 1; i < resolved.Count; i++)
+                            {
+                                if (resolved[i] != firstN)
+                                {
+                                    allSame = false;
+                                    break;
+                                }
+                            }
+
+                            if (!allSame)
+                            {
+                                _cachedEdges.Add(ek);
+                            }
                         }
                     }
                 }
@@ -219,20 +301,39 @@ internal static class GlLineDrawer
         return a.Item3.CompareTo(b.Item3);
     }
 
-    private static ((int, int, int), (int, int, int), (int, int, int), (int, int, int)) CreateFaceKey((int, int, int) p0, (int, int, int) p1, (int, int, int) p2, (int, int, int) p3)
+    private static ((int,int,int), (int,int,int)) CreateEdgeKey((int,int,int) a, (int,int,int) b)
+    {
+        return GridCompare(a, b) < 0 ? (a, b) : (b, a);
+    }
+
+    private static ((int,int,int), (int,int,int), (int,int,int), (int,int,int)) CreateFaceKey((int,int,int) p0, (int,int,int) p1, (int,int,int) p2, (int,int,int) p3)
     {
         var arr = new[] { p0, p1, p2, p3 };
         System.Array.Sort(arr, GridCompare);
         return (arr[0], arr[1], arr[2], arr[3]);
     }
 
-    private static ((int, int, int), (int, int, int)) CreateEdgeKey((int, int, int) a, (int, int, int) b)
+    private static bool IsPointOnSegment((int x, int y, int z) a, (int x, int y, int z) b, (int x, int y, int z) v)
     {
-        return GridCompare(a, b) < 0 ? (a, b) : (b, a);
+        long abx = b.x - a.x, aby = b.y - a.y, abz = b.z - a.z;
+        long avx = v.x - a.x, avy = v.y - a.y, avz = v.z - a.z;
+
+        // Cross product must be strictly 0 for exact collinearity
+        long cx = aby * avz - abz * avy;
+        long cy = abz * avx - abx * avz;
+        long cz = abx * avy - aby * avx;
+        if (cx != 0 || cy != 0 || cz != 0) return false;
+
+        // Dot product bounds check
+        long dotAV_AB = avx * abx + avy * aby + avz * abz;
+        if (dotAV_AB <= 0) return false;
+
+        long dotAB_AB = abx * abx + aby * aby + abz * abz;
+        if (dotAV_AB >= dotAB_AB) return false;
+
+        return true;
     }
 
-    // Calculates normal using the cross product of the diagonals (p2 - p0) x (p3 - p1).
-    // This correctly handles faces where 2 adjacent vertices have collapsed into a single point.
     private static (long x, long y, long z) CalcNormal((int x, int y, int z) p0, (int x, int y, int z) p1, (int x, int y, int z) p2, (int x, int y, int z) p3)
     {
         long dx1 = p2.x - p0.x;
@@ -243,23 +344,25 @@ internal static class GlLineDrawer
         long dy2 = p3.y - p1.y;
         long dz2 = p3.z - p1.z;
 
-        return (
-            dy1 * dz2 - dz1 * dy2,
-            dz1 * dx2 - dx1 * dz2,
-            dx1 * dy2 - dy1 * dx2
-        );
+        long nx = dy1 * dz2 - dz1 * dy2;
+        long ny = dz1 * dx2 - dx1 * dz2;
+        long nz = dx1 * dy2 - dy1 * dx2;
+
+        return NormalizeNormal(nx, ny, nz);
     }
 
-    private static bool AreParallel((long x, long y, long z) n1, (long x, long y, long z) n2)
+    private static long Gcd(long a, long b)
     {
-        // If normal is dead zero (extreme topological collapse), treat as non-parallel to force crease rendering
-        if ((n1.x == 0 && n1.y == 0 && n1.z == 0) || (n2.x == 0 && n2.y == 0 && n2.z == 0))
-            return false;
+        a = System.Math.Abs(a); b = System.Math.Abs(b);
+        while (b != 0) { long t = b; b = a % b; a = t; }
+        return a;
+    }
 
-        long cx = n1.y * n2.z - n1.z * n2.y;
-        long cy = n1.z * n2.x - n1.x * n2.z;
-        long cz = n1.x * n2.y - n1.y * n2.x;
-        return cx == 0 && cy == 0 && cz == 0;
+    private static (long, long, long) NormalizeNormal(long nx, long ny, long nz)
+    {
+        long g = Gcd(nx, Gcd(ny, nz));
+        if (g == 0) return (0, 0, 0);
+        return (nx / g, ny / g, nz / g);
     }
 
     // --- Render Loop ---
